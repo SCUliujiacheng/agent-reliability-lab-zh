@@ -1,6 +1,6 @@
 <h1 align="center">Agent Reliability Lab｜智能体可靠性实验室</h1>
 
-<p align="center">让工具型 AI Agent 在超时、限流、审批与重启之后，仍能留下可验证、可恢复、可回归的工程证据。</p>
+<p align="center">用 6 个固定故障场景，看看 Agent 遇到超时、限流、审批和重启后会怎么走。</p>
 
 <p align="center">
   <a href="https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml/badge.svg"></a>
@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="#30-秒看结果">结果</a> ·
-  <a href="#我为什么做这个项目">动机</a> ·
+  <a href="#我想看的是失败以后">项目起点</a> ·
   <a href="#架构">架构</a> ·
   <a href="#在本地跑起来">运行</a> ·
   <a href="#评测与失败分析">评测证据</a> ·
@@ -23,13 +23,13 @@
   <img src="docs/screenshots/dashboard-overview.png" width="1120" alt="Agent Reliability Lab 中文证据控制台">
 </p>
 
-<p align="center"><sub>同一控制台串联场景复现、双模式评测、运行轨迹与审批证据。</sub></p>
+<p align="center"><sub>页面上的评测、场景和 trace 都来自同一套本地 API。</sub></p>
 
-## 我为什么做这个项目
+## 我想看的是失败以后
 
 工具调用成功时，很多 Agent demo 看起来都差不多。我更想看超时、限流、重启或审批卡住以后会发生什么：它能不能说清楚停在哪里，恢复时会不会多做一次事，最后留下的记录够不够别人核对。
 
-所以这里没有追求一条漂亮的 happy path。代码把状态、工具尝试、审批决定和 trace 留在同一个可检查的流程里；评测则从这些原始记录重算结果。它是我用来反复拆看这些边界的小实验，而不是生产事故处理器。
+这个仓库就是拿来反复跑这些情况的。状态、工具尝试、审批决定和 trace 都会保存下来，评测再从原始记录重算结果。当前范围只有本地单节点和合成场景，不是生产事故处理器。
 
 ## 30 秒看结果
 
@@ -47,13 +47,11 @@
 
 ## 最后做成了什么
 
-我把注意力放在失败之后的几件具体事上，做成了一条从运行时到页面都能走通的路径：
+最后落到三个部分：
 
-- 用显式状态机、checkpoint、optimistic version check 与 execution lease 实现 restart-safe resume，并让运行状态变更与审计事件共享一次 SQLite 事务。
-- 用严格 Pydantic schema、tool registry、timeout、bounded retry、idempotency key 和确定性 fault injection 收紧工具调用边界。
-- 将人工审批绑定到当前 `action_step`、SHA-256 `action_fingerprint`、`tool_name` 与 `arguments`；重复决定幂等收敛，过期、伪造或冲突决定 fail closed。
-- 构建 FastAPI、Typer CLI、React + TypeScript 控制台、Docker Compose 与 GitHub Actions，让同一份证据可通过 UI、HTTP、CLI 和 CI 检查。
-- 建立 trace-derived graders 与 baseline-aware gate，区分产品回归、不可比报告和证据损坏。
+- 运行恢复：显式状态、checkpoint、optimistic version check 和 execution lease 负责从中断处继续；状态变化与对应事件写在同一个 SQLite 事务里。
+- 工具与审批：Pydantic schema、timeout、bounded retry 和 idempotency key 约束工具调用；审批还要带回当前动作的 step 和 SHA-256 fingerprint。
+- 评测与查看：grader 从 trace 重算指标，gate 再和 baseline 对比。同一份结果可以从 FastAPI、Typer CLI 或 React 页面查看。
 
 ## 架构
 
@@ -68,10 +66,10 @@
 | 约束 | 实现 | 为什么这样取舍 |
 | --- | --- | --- |
 | Agent 可能失控循环 | 默认最多 64 次新 policy call，可配置范围 1–1024；每个槽位先持久化预留 | crash 后仍能正确计数；tool retry 仍属于一次 logical action |
-| 工具可能慢、坏或返回脏数据 | 每次 handler attempt 最多 60 秒、最多 5 次；输入/输出均严格校验 | 让失败可分类、可重放，避免无效结果进入状态机 |
+| 工具可能慢、坏或返回脏数据 | 每次 handler attempt 最多 60 秒、最多 5 次；输入/输出均严格校验 | timeout、schema error 等失败会被分开记录，无效结果不会进入状态机 |
 | 审批可能发生竞态 | 当前 action 身份与决定在 SQLite 中原子比较并写入 | exact duplicate 幂等；stale/conflicting decision 返回 HTTP 409 |
-| trace 可能泄露敏感值 | 持久化前递归清洗，API 仅发布更窄 DTO | 保留可审计性，同时缩小泄露面 |
-| benchmark 可能“自己证明自己” | gate 重算 summary，校验顺序语义、唯一性、hash 与 provenance | 被篡改或不可比的 artifact 作为 infrastructure failure，而非 PASS |
+| trace 可能泄露敏感值 | 持久化前递归清洗，API 只返回更窄的 DTO | 页面不需要拿到存储层的完整 payload |
+| 只看 summary 容易漏掉被改过的 trace | gate 重算 summary，校验顺序语义、唯一性、hash 与 provenance | 对不上时返回 infrastructure failure，不给 `PASS` |
 | 模型服务不可控 | 默认 benchmark 不调用模型；另提供严格的 OpenAI-compatible `/chat/completions` adapter | 确定性 headline 与 provider quality 评测分离 |
 
 可选 provider adapter 对远程 URL 强制 HTTPS，关闭 redirect，默认 connect/read timeout 为 5/30 秒、总 deadline 为 45 秒，并在 streaming 阶段限制响应为 1 MiB（可验证上限 16 MiB）。它不提供 outbound allowlist 或 network sandbox，生产环境仍需单独限制 egress。
@@ -201,7 +199,7 @@ docs/           架构、benchmark semantics、provenance 与技术导览
 - 通用 `Policy` protocol 不强制统一的 per-call deadline；自定义 policy 必须约束自己的 I/O。可选 HTTP provider 有 45 秒总 deadline，但 action budget 只限制调用次数，不限制调用时长。
 - 工具副作用均为模拟，本项目不是生产事故执行器。
 
-如果把它往生产方向推进，下一步会是 PostgreSQL migrations、带身份的审批、distributed leases/workers、OpenTelemetry export，以及独立、重复、统计可信的 provider evaluation track。这些都不在当前结论里。
+我暂时没有把 PostgreSQL migrations、带身份的审批、distributed workers、OpenTelemetry export 和真实 provider 的重复评测做进来。它们需要另一套实验，当前这 6 个场景的数字不能直接外推过去。
 
 ## 五分钟技术导览
 
