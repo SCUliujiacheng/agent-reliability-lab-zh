@@ -39,8 +39,8 @@ export function Overview({
     <header className="overview-header">
       <div>
         <p className="eyebrow">Agent Reliability Lab</p>
-        <h1>可复现的智能体恢复证据</h1>
-        <p>对比执行模式、检查持久化轨迹，并复现受控的可靠性场景。</p>
+        <h1>Agent 出错后发生了什么</h1>
+        <p>运行固定场景，对照 fragile / resilient，再点进 trace。</p>
       </div>
       <div className="overview-header__actions">
         <span className="environment-label"><span aria-hidden="true" /> 本地 API</span>
@@ -65,7 +65,7 @@ export function Overview({
           <div>
             <p className="eyebrow">API 不可用</p>
             <h2>无法加载控制台数据</h2>
-            <p>请检查本地 API 后重试。控制台没有展示任何不完整的响应数据。</p>
+            <p>请确认本地 API 正在运行，然后重试。</p>
           </div>
           <button type="button" className="primary-button" onClick={onRetry}>重试加载</button>
         </section>
@@ -129,8 +129,8 @@ export function Overview({
         <aside className="launcher-panel" id="scenarios" aria-labelledby="launcher-title">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">受控复现</p>
-              <h2 id="launcher-title">场景启动器</h2>
+              <p className="eyebrow">从一个固定案例开始</p>
+              <h2 id="launcher-title">挑一个场景跑跑看</h2>
             </div>
           </div>
           <ScenarioLauncher
@@ -145,14 +145,14 @@ export function Overview({
         <section className="trace-preview" aria-labelledby="trace-preview-title">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">执行轨迹</p>
-              <h2 id="trace-preview-title">打开一次运行，查看事件瀑布</h2>
+              <p className="eyebrow">接着看 trace</p>
+              <h2 id="trace-preview-title">打开一次运行，顺着事件往下看</h2>
             </div>
           </div>
           <div className="preview-steps" aria-hidden="true">
             <span /><span /><span /><span />
           </div>
-          <p>仅在选择运行后请求轨迹事件，让概览页的数据量始终受控。</p>
+          <p>选中运行后才加载事件；概览不需要先把所有 trace 都拉下来。</p>
         </section>
       </div>
     </main>

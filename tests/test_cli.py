@@ -17,6 +17,18 @@ SUITE = Path(__file__).parent.parent / "scenarios" / "incident-response"
 RUNNER = CliRunner()
 
 
+def test_human_cli_output_is_localized() -> None:
+    help_result = RUNNER.invoke(app, ["run", "--help"])
+    evaluated = RUNNER.invoke(app, ["eval", str(SUITE)])
+
+    assert help_result.exit_code == 0, help_result.output
+    assert "通过持久化运行时执行一个冻结场景" in help_result.output
+    assert evaluated.exit_code == 0, evaluated.output
+    assert "模式" in evaluated.stdout
+    assert "正确率" in evaluated.stdout
+    assert "接受的无效输出" in evaluated.stdout
+
+
 def test_eval_json_stdout_is_exactly_one_object(tmp_path: Path) -> None:
     output = tmp_path / "report.json"
     result = RUNNER.invoke(app, ["eval", str(SUITE), "--output", str(output), "--json"])

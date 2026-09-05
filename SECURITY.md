@@ -2,7 +2,7 @@
 
 ## 支持版本
 
-Agent Reliability Lab 是一个研究与工程验证项目。安全修复仅应用于 `main` 的最新提交；旧快照不作为受支持版本维护。
+这是一个研究和工程验证项目，不是已经部署的服务。安全修复只会落到 `main` 的最新提交；旧快照不作为受支持版本维护。
 
 ## 报告漏洞
 
@@ -14,7 +14,7 @@ Agent Reliability Lab 是一个研究与工程验证项目。安全修复仅应�
 
 ## 适用范围与威胁边界
 
-本仓库演示本地单节点智能体编排。入站 HTTP 默认仅限本机：Docker Compose 只在回环地址发布两个服务，FastAPI 检查精确 Host 允许列表，Nginx 拒绝未知虚拟主机。在 Docker Compose 路径中，Nginx 添加 `Content-Security-Policy: frame-ancestors 'none'` 和 `X-Frame-Options: DENY`；直接使用 Vite 或 Uvicorn 开发时不包含这一请求头层。所有 HTTP 方法的应用请求体和列表查询均有上限，允许的 CORS 来源也必须显式配置。
+这个仓库演示的是本地单节点智能体编排，边界到这里为止。入站 HTTP 默认只留在本机：Docker Compose 只在回环地址发布两个服务，FastAPI 检查精确 Host 允许列表，Nginx 拒绝未知虚拟主机。在 Docker Compose 路径中，Nginx 添加 `Content-Security-Policy: frame-ancestors 'none'` 和 `X-Frame-Options: DENY`；直接使用 Vite 或 Uvicorn 开发时不包含这一请求头层。所有 HTTP 方法的应用请求体和列表查询均有上限，允许的 CORS 来源也必须显式配置。
 
 只有经过注册和 schema 验证的工具可以执行。工具声明会拒绝非有限或过大的重试与计时值（最多尝试 5 次、每次处理器调用 60 秒、首次退避 5 秒）。审批请求必须回传当前等待动作的精确步骤和指纹；SQLite 会原子验证并记录这一绑定。公开的待审批投影和追踪载荷都会递归脱敏。持久化运行记录会保留原始待处理参数，以便重建精确动作；因此，策略绝不能在工具参数中放入凭证。操作者名称仍是调用方提供的标签，而非经过身份认证的身份。
 

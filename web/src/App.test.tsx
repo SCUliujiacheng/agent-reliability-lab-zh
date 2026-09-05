@@ -490,13 +490,15 @@ describe("App workflows", () => {
     expect(result.violations).toEqual([]);
   });
 
-  it("uses the visual-contract headline and API-backed benchmark rail", async () => {
+  it("explains the investigation path before showing the benchmark rail", async () => {
     vi.stubGlobal("fetch", overviewFetch({ runs: [runFixture()] }));
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { name: "可复现的智能体恢复证据" }),
+      await screen.findByRole("heading", { name: "Agent 出错后发生了什么" }),
     ).toBeVisible();
+    expect(screen.getByText("运行固定场景，对照 fragile / resilient，再点进 trace。"))
+      .toBeVisible();
     expect(screen.getByRole("link", { name: "运行场景" })).toBeVisible();
     const rail = screen.getByRole("region", { name: "可靠性指标" });
     for (const label of [

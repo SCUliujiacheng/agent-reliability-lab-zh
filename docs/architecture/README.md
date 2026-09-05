@@ -1,33 +1,7 @@
-# 架构制品验证
+# 架构图怎么来的
 
-架构图由 `agent-reliability-lab.architecture.json` 生成，是一个自包含、可交互的 HTML 制品。
+`agent-reliability-lab.architecture.json` 记录组件、关系、说明卡和对应的源码位置，生成的 `agent-reliability-lab-architecture.html` 可以切换主题、缩放、搜索和追踪连接。README 使用同一份图的静态截图。
 
-本制品对应[中文独立仓库](https://github.com/SCUliujiacheng/agent-reliability-lab-zh)；英文版本与英文架构说明继续保留在[英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)。
+## 重新生成架构图
 
-## 交付回执
-
-- diagram type：`architecture`
-- quality profile：`showcase`
-- repository evidence：在实现提交 `61682da932ab3f55596a22747cf6d64c90ae106e` 验证了 `17` 个引用
-- specification SHA-256：`e637ff2b3915a643e7db652f09c5036aea68d56991b6e6f85723a9eca06a388b`
-- HTML SHA-256：`550e7a6028396216682fa96936a4cb15db76f51f307c7430eaf1d166e73fb9cf`
-- specification bytes：`8,734`
-- HTML bytes：`725,297`
-- structural checks：`9 / 9`
-- composition：`0` errors，`0` warnings
-- correction rounds：`0`
-
-## 视觉检查
-
-以下视口的 containment 与 readability 检查均通过：
-
-- 1440 × 900
-- 1600 × 1000
-- 1920 × 1080
-- 2048 × 1320
-
-所有视口的横向、纵向文档 overflow 均为零，最小投影节点文字高于 6 px 校验下限。自动回执仍保留 `visualReview: "pending"`：它只记录 containment，不代替主观视觉判断。
-
-已人工检查 1440 × 900 与 2048 × 1320 的浅色、深色截图；中文节点、关系标签与三张说明卡均无裁切，未发现路线碰撞或含混 corridor，因此人工视觉检查通过，无需修正轮次。
-
-`agent-reliability-lab-architecture.visual-check.html` 是四张检查截图的本地 contact sheet。主 HTML 仍是更完整的交付制品，支持主题切换、pan/zoom、搜索、guided views、关系追踪与离线导出。
+架构变化后，我会同时更新 JSON、HTML 和 README 里的截图，再检查源码引用以及浅色、深色主题下的文字、节点和连线。JSON 与渲染结果放在一起，避免两边越改越不一致。

@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你帮助改进 Agent Reliability Lab。所有更改都应维护仓库的核心契约：可靠性结论必须能从有序证据中复现，并在证据不完整或不一致时以失败关闭。
+感谢你来改 Agent Reliability Lab。这里最重要的约束很朴素：可靠性结论要能从有序证据重算；证据不完整或互相矛盾时，检查应当失败。
 
 ## 开发环境
 
@@ -26,7 +26,7 @@ uv run arl eval scenarios/incident-response --output artifacts/current-report.js
 uv run arl gate artifacts/current-report.json --baseline benchmarks/baseline-report.json
 ```
 
-## 变更准则
+## 改动时请留意
 
 - 修改运行时、工具、存储、API 或门禁行为前，先添加一个失败测试。
 - 公开输入应保持有界且严格，并拒绝未知字段。
@@ -38,7 +38,7 @@ uv run arl gate artifacts/current-report.json --baseline benchmarks/baseline-rep
 - 保留审批动作步骤/指纹的精确绑定、过期目标拒绝和完全相同重复请求的收敛行为。
 - 保持提供商重定向禁用，并保留远程 HTTPS、总时限、响应大小和凭证脱敏测试。
 - 保持 FastAPI 与 Nginx 的可信 Host 配置一致。
-- 与结论相关的更改完成后，重新生成基线、基准测试说明、架构收据和真实浏览器截图。
+- 与结论相关的更改完成后，重新生成基线、基准测试说明、架构图和真实浏览器截图。
 - 记录任何基准测试分母或语义变化。
 
 ## 场景与基线变更
@@ -54,4 +54,4 @@ uv run arl eval scenarios/incident-response \
 
 ## 拉取请求
 
-拉取请求应保持聚焦，并说明行为变化、故障模式、测试证据、迁移或兼容性影响，以及仍然存在的局限。涉及仪表盘可见变化时应附带截图。
+请让拉取请求聚焦，说明行为和故障模式变了什么、测试看到了什么、有没有迁移或兼容性影响，以及还剩下哪些限制。仪表盘可见变化请附截图。
