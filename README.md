@@ -1,17 +1,35 @@
-# Agent Reliability Lab｜智能体可靠性实验室
+<h1 align="center">Agent Reliability Lab｜智能体可靠性实验室</h1>
 
-> 面向工具型 AI Agent 的本地优先可靠性实验台：把重试、持久化恢复、人工审批、故障注入与可验证评测，做成可以运行、审计和回归的工程证据。
+<p align="center">让工具型 AI Agent 在超时、限流、审批与重启之后，仍能留下可验证、可恢复、可回归的工程证据。</p>
 
-**简体中文** | [English](https://github.com/SCUliujiacheng/agent-reliability-lab)
+<p align="center">
+  <a href="https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white"></a>
+  <a href="https://react.dev/"><img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-0F766E.svg"></a>
+</p>
 
-这是面向中文读者的独立公开版本，README、控制台与讲解文档以简体中文为主；原有英文版本继续在[英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)维护。
+<p align="center">
+  <a href="#30-秒看结果">结果</a> ·
+  <a href="#我为什么做这个项目">动机</a> ·
+  <a href="#架构">架构</a> ·
+  <a href="#3-分钟运行">运行</a> ·
+  <a href="#评测与失败分析">评测证据</a> ·
+  <a href="#五分钟技术导览">技术导览</a> ·
+  <a href="https://github.com/SCUliujiacheng/agent-reliability-lab">English</a>
+</p>
 
-[![CI](https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml/badge.svg)](https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Node 22.20+](https://img.shields.io/badge/node-22.20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-0F766E.svg)](LICENSE)
+<p align="center">
+  <img src="docs/screenshots/dashboard-overview.png" width="1120" alt="Agent Reliability Lab 中文证据控制台">
+</p>
 
-![Agent Reliability Lab 控制台](docs/screenshots/dashboard-overview.png)
+<p align="center"><sub>同一控制台串联场景复现、双模式评测、运行轨迹与审批证据。</sub></p>
+
+## 我为什么做这个项目
+
+我关心的不是 Agent 能否在理想路径上“跑通一次”，而是它在工具超时、限流、进程重启和人工审批之后，是否还能解释自己做了什么、恢复到哪里，以及为什么可以相信最终结果。
+
+为回答这个问题，我把可靠性拆成一组可以执行和验证的契约：状态持久化、幂等工具边界、绑定具体动作的审批、按序轨迹，以及能够从原始证据重建指标的评测门禁。这个仓库记录的是我对这些边界的设计与验证，而不是一条只在正常路径成立的演示。
 
 ## 30 秒看结果
 
@@ -27,7 +45,7 @@
 
 差异来自首次调用的超时（`timeout`）与限流（`rate_limit`）：韧性模式会记录失败、在策略边界内重试并到达声明结果；脆弱模式在第一次失败后终止。指标不是手填摘要，而是由有序轨迹、套件/操作/输出哈希与版本化场景重新构建。
 
-## 项目价值与我的工作
+## 我如何把问题做成系统
 
 多数 Agent 演示只展示正常路径（happy path）；这个项目把“失败后是否仍然可信”作为主要产物。我实现了从运行时、工具边界、证据存储到评测门禁的完整纵向切片：
 
@@ -70,7 +88,11 @@ uv sync --dev --locked
 npm ci --prefix web
 
 # Terminal 1: API
-uv run uvicorn agent_reliability_lab.api.app:create_app --factory --host 127.0.0.1 --port 8000
+uv run uvicorn \
+  agent_reliability_lab.api.app:create_app \
+  --factory \
+  --host 127.0.0.1 \
+  --port 8000
 
 # Terminal 2: dashboard (proxies /v1 to the API)
 npm --prefix web run dev
@@ -146,8 +168,10 @@ npm --prefix web run lint
 npm --prefix web run typecheck
 npm --prefix web run build
 
-uv run arl eval scenarios/incident-response --output artifacts/final-report.json
-uv run arl gate artifacts/final-report.json --baseline benchmarks/baseline-report.json
+uv run arl eval scenarios/incident-response \
+  --output artifacts/final-report.json
+uv run arl gate artifacts/final-report.json \
+  --baseline benchmarks/baseline-report.json
 ```
 
 GitHub Actions 将 Python、frontend、benchmark 和 container 分成独立 jobs。container job 构建两个镜像并验证 Compose；benchmark job 强制执行已提交的 evidence contract。
@@ -165,7 +189,7 @@ src/agent_reliability_lab/
 web/            React + TypeScript 证据控制台
 scenarios/      冻结的 synthetic YAML suite
 benchmarks/     已提交的 baseline report
-docs/           架构、benchmark semantics、provenance 与面试指南
+docs/           架构、benchmark semantics、provenance 与技术导览
 ```
 
 ## 已知限制
@@ -179,9 +203,9 @@ docs/           架构、benchmark semantics、provenance 与面试指南
 
 下一阶段可以扩展 PostgreSQL migrations、authenticated approvals、distributed leases/workers、OpenTelemetry export，以及独立、重复、统计可信的 provider evaluation track。
 
-## 面试指南
+## 五分钟技术导览
 
-建议用 5 分钟完成一次演示：先展示基准差异，再启动 `timeout-recovery`，最后沿 trace 解释 durable retry 和 fail-closed gate。可以重点讨论：
+我把核心验证路径压缩成 5 分钟：先查看基准差异，再启动 `timeout-recovery`，最后沿 trace 检查 durable retry 和 fail-closed gate。这条路径重点覆盖：
 
 - 为什么使用 exact trace-derived graders，而不是 LLM-as-judge？
 - 两个应用实例同时审批时，竞态如何收敛？
@@ -189,7 +213,7 @@ docs/           架构、benchmark semantics、provenance 与面试指南
 - gate 如何区分产品回归与损坏的 evidence artifact？
 - 从 SQLite 迁移到 PostgreSQL 与 worker queues 时，哪些契约可以保留？
 
-完整答案、可引用代码路径和演示顺序见[面试指南](docs/interview-guide.md)。
+完整设计说明与操作顺序见[技术设计导览](docs/technical-tour.md)。
 
 ## 许可证（License）
 
