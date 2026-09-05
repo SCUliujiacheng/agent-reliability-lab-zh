@@ -38,7 +38,7 @@ function Dashboard() {
       setMutationState("success");
     } catch {
       setMutationState("error");
-      setNotice("The run could not be started. Retry when the API is available.");
+      setNotice("无法启动运行。请在 API 可用后重试。");
     }
   };
 
@@ -50,9 +50,9 @@ function Dashboard() {
     try {
       const report = await createEvaluation();
       overview.replaceEvaluation(report);
-      setNotice("Evaluation complete");
+      setNotice("评测完成");
     } catch {
-      setNotice("The evaluation could not be completed. Retry when the API is available.");
+      setNotice("无法完成评测。请在 API 可用后重试。");
     } finally {
       evaluationInFlight.current = false;
       setEvaluationPending(false);
@@ -77,21 +77,21 @@ function Dashboard() {
         allow,
         action_step: approval.action_step,
         action_fingerprint: approval.action_fingerprint,
-        reason: allow ? "Approved in reliability dashboard" : "Denied in reliability dashboard",
+        reason: allow ? "在可靠性控制台中批准" : "在可靠性控制台中拒绝",
       });
       if (!isCurrentSelection()) return;
       detail.replaceRun(run, approvalRunId);
       await detail.reloadTrace(approvalRunId);
       if (!isCurrentSelection()) return;
       setMutationState("success");
-      setNotice(allow ? "Action allowed" : "Action denied");
+      setNotice(allow ? "操作已允许" : "操作已拒绝");
     } catch (error) {
       if (!isCurrentSelection()) return;
       if (error instanceof ApiClientError && error.status === 409) {
         detail.refresh(approvalRunId);
-        setNotice("Approval state refreshed");
+        setNotice("审批状态已刷新");
       } else {
-        setNotice("The approval decision could not be recorded.");
+        setNotice("无法记录审批决定。");
       }
       setMutationState("error");
     } finally {
@@ -124,14 +124,14 @@ function Dashboard() {
           />
         ) : selectedRunId !== null && detail.state === "error" ? (
           <main className="detail-load-state" role="alert">
-            <h1>Run detail unavailable</h1>
-            <p>The selected run or its trace could not be loaded.</p>
-            <button type="button" className="primary-button" onClick={() => detail.refresh()}>Try again</button>
-            <button type="button" className="text-button" onClick={() => selectRun(null)}>Back to Runs</button>
+            <h1>运行详情不可用</h1>
+            <p>无法加载所选运行或其轨迹。</p>
+            <button type="button" className="primary-button" onClick={() => detail.refresh()}>重试</button>
+            <button type="button" className="text-button" onClick={() => selectRun(null)}>返回运行记录</button>
           </main>
         ) : (
           <>
-            {selectedRunId !== null ? <p className="detail-loading" aria-live="polite">Loading run detail…</p> : null}
+            {selectedRunId !== null ? <p className="detail-loading" aria-live="polite">正在加载运行详情…</p> : null}
             <Overview
               state={overview.state}
               runs={overview.data.runs}

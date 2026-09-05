@@ -29,10 +29,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.failed) {
       return (
         <main className="fatal-state" role="alert">
-          <p className="eyebrow">Unexpected interface error</p>
-          <h1>Dashboard interrupted</h1>
-          <p>The current view could not be rendered. API and trace details were not exposed.</p>
-          <button type="button" className="primary-button" onClick={this.reset}>Reload dashboard</button>
+          <p className="eyebrow">界面发生意外错误</p>
+          <h1>控制台已中断</h1>
+          <p>当前视图无法渲染，API 与轨迹详情均未暴露。</p>
+          <button type="button" className="primary-button" onClick={this.reset}>重新加载控制台</button>
         </main>
       );
     }

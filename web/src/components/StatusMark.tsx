@@ -1,11 +1,11 @@
 import type { RunStatus } from "../types";
 
 const STATUS_LABELS: Record<RunStatus, string> = {
-  queued: "Queued",
-  running: "Running",
-  waiting_approval: "Waiting approval",
-  succeeded: "Succeeded",
-  failed: "Failed",
+  queued: "已排队",
+  running: "运行中",
+  waiting_approval: "等待审批",
+  succeeded: "已成功",
+  failed: "已失败",
 };
 
 const STATUS_GLYPHS: Record<RunStatus, string> = {

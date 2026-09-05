@@ -60,7 +60,7 @@ export async function requestJson<T>(
       throw new ApiClientError(
         response.status,
         "http_error",
-        "The server could not complete the request.",
+        "服务器无法完成请求。",
       );
     }
     if (response.status === 204) return undefined as T;
@@ -68,7 +68,7 @@ export async function requestJson<T>(
   } catch (error) {
     if (error instanceof ApiClientError) throw error;
     if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new ApiClientError(0, "network_error", "The API is not reachable.");
+    throw new ApiClientError(0, "network_error", "无法连接 API。");
   }
 }
 
@@ -143,7 +143,7 @@ export async function getTrace(
       throw new ApiClientError(
         502,
         "trace_too_large",
-        `The trace exceeds the ${MAX_TRACE_EVENTS}-event dashboard limit.`,
+        `轨迹超过控制台 ${MAX_TRACE_EVENTS} 个事件的上限。`,
       );
     }
     const page = await requestJson<TracePage>(
@@ -156,7 +156,7 @@ export async function getTrace(
       throw new ApiClientError(
         502,
         "trace_too_large",
-        `The trace exceeds the ${MAX_TRACE_EVENTS}-event dashboard limit.`,
+        `轨迹超过控制台 ${MAX_TRACE_EVENTS} 个事件的上限。`,
       );
     }
     events.push(...page.events);
@@ -200,7 +200,7 @@ function invalidTracePage(): ApiClientError {
   return new ApiClientError(
     502,
     "invalid_trace_page",
-    "The API returned an inconsistent trace page.",
+    "API 返回了不一致的轨迹分页。",
   );
 }
 

@@ -19,7 +19,7 @@ export function MutationNotice({ message, onDismiss }: MutationNoticeProps) {
       <button
         type="button"
         className="mutation-notice__dismiss"
-        aria-label="Dismiss notification"
+        aria-label="关闭通知"
         onClick={onDismiss}
       >
         <span aria-hidden="true">×</span>

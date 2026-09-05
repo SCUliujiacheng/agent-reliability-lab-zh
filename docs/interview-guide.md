@@ -1,128 +1,65 @@
-# Interview guide
+# 面试讲解指南
 
-This document is a concise map for explaining Agent Reliability Lab in a
-technical interview. It emphasizes decisions and evidence rather than a tour of
-every file.
+本文档提供一份在技术面试中介绍 Agent Reliability Lab 的精简路线图，重点讲解设计决策与证据，而不是逐个文件导览。
 
-## Thirty-second summary
+## 三十秒概述
 
-> Agent Reliability Lab is a local-first test bench for tool-using agents. It
-> runs the same frozen incident scenarios through fragile and resilient
-> execution, persists every state transition and tool attempt, supports durable
-> human approval, and turns the resulting traces into an exact regression gate
-> and an explorable dashboard.
+> Agent Reliability Lab 是一个面向工具调用型智能体的本地优先测试平台。它让同一组冻结事件响应场景分别经过 fragile 与 resilient 两种执行模式，持久化每次状态转换和工具尝试，支持持久化人工审批，并将追踪结果转化为精确回归门禁和可交互探索的仪表盘。
 
-## Five-minute demo
+## 五分钟演示
 
-1. Open the dashboard, click **Run evaluation**, and inspect the returned
-   report. Point out the 66.7% versus 100% correctness result and the exact
-   six-case denominator.
-2. Launch `timeout-recovery` in resilient mode. Open the trace and follow the
-   injected timeout, failed attempt, retry, successful attempt, checkpoint, and
-   terminal result in sequence.
-3. Launch `approval-reconstruction`. Explain that the service can be rebuilt
-   around the same SQLite database before approval. Allow the action and show
-   the single `approval.recorded` event and single write execution.
-4. Export the trace JSON, then run the CLI gate against the committed baseline.
-5. Open the interactive architecture and compare the **Interactive run** and
-   **Evaluation gate** guided views; use **Security boundaries** to explain
-   where the guarantees stop.
+1. 打开仪表盘，点击**运行评测（Run evaluation）**并查看返回的报告。指出 66.7% 与 100% 的正确率对比，以及精确的六场景分母。
+2. 以 resilient 模式启动 `timeout-recovery`。打开追踪记录，依次查看注入的超时、失败尝试、重试、成功尝试、检查点和最终结果。
+3. 启动 `approval-reconstruction`。说明服务可以围绕同一 SQLite 数据库重建后再审批。批准该动作，并展示唯一一条 `approval.recorded` 事件和唯一一次写操作。
+4. 导出追踪 JSON，再通过 CLI 对照已提交基线运行门禁。
+5. 打开交互式架构图，对比**交互式运行（Interactive run）**与**评测门禁（Evaluation gate）**引导视图；再用**安全边界（Security boundaries）**说明保证范围止于何处。
 
-## Design decisions worth discussing
+## 值得讨论的设计决策
 
-### Why a scripted policy?
+### 为什么使用脚本化策略？
 
-The default benchmark isolates orchestration reliability from model variance,
-credentials, rate limits, and cost. This makes failures reproducible and lets
-the exact grader prove a narrow claim. An OpenAI-compatible policy adapter is
-available as an integration boundary, but its behavior is deliberately not
-folded into the deterministic headline result.
+默认基准测试将编排可靠性与模型随机性、凭证、限流和成本隔离，使故障可以复现，并让精确评分器证明边界明确的结论。项目提供 OpenAI 兼容策略适配器作为集成边界，但有意不将其行为纳入确定性的核心结果。
 
-### Why SQLite?
+### 为什么使用 SQLite？
 
-The project needs durable reconstruction, transactions, uniqueness, and
-compare-and-swap behavior without an external service. SQLite with WAL is a
-good single-node demonstration substrate. The code treats persistence as the
-coordination boundary, including cross-instance approval decisions, while the
-documentation explicitly avoids claiming multi-node production readiness.
+项目需要持久化重建、事务、唯一性和比较并交换（compare-and-swap）语义，同时不依赖外部服务。启用 WAL 的 SQLite 很适合作为单节点演示基础。代码将持久化层作为协调边界，包括跨实例审批决策；文档则明确不宣称具备多节点生产就绪能力。
 
-### How is exactly-once behavior approached?
+### 如何实现恰好一次（exactly-once）行为？
 
-There is no universal exactly-once network guarantee. The project implements a
-bounded local contract: approval recording is atomic, run transitions use
-optimistic state/version checks, high-risk writes require idempotency keys, and
-tool results are cached behind a claim lease. Concurrent duplicate approvals
-therefore converge on one durable decision and one write in the tested SQLite
-deployment.
+网络环境中不存在通用的恰好一次保证。本项目实现了一个有界本地契约：原子记录审批，运行状态转换使用乐观状态/版本检查，高风险写操作要求幂等键，并在占用租约（claim lease）后缓存工具结果。因此，在经过测试的 SQLite 部署中，并发重复审批会收敛为一个持久化决策和一次写操作。
 
-### Why not trust summary metrics in JSON?
+### 为什么不信任 JSON 中的汇总指标？
 
-An evaluation artifact can be edited. The gate validates schema and provenance,
-rebuilds metrics from trace-level evidence, checks scenario/action identities
-and deterministic outputs, and then applies exact-fraction thresholds. This
-makes the artifact auditable and causes corruption to fail closed.
+评测制品可以被编辑。门禁会验证模式和来源信息，根据追踪级证据重建指标，检查场景/动作身份与确定性输出，随后应用精确分数阈值。这样既保证制品可审计，也确保数据损坏时以失败关闭。
 
-### What is the security boundary?
+### 安全边界是什么？
 
-Only registered tools can run; arbitrary shell execution is absent. Inputs and
-outputs are validated with Pydantic. Traces are sanitized before persistence,
-request bodies are bounded, CORS origins are explicit, Host values use an exact
-allowlist, and Nginx rejects unknown virtual hosts. Compose browser responses
-deny framing. The optional provider requires remote HTTPS, disables redirects,
-requests identity encoding, rejects encoded responses before body iteration,
-and bounds total time and streamed response bytes. Its credential is redacted,
-and a returned action that reflects the credential is rejected before
-persistence.
-Each run also bounds new policy calls with durable pre-invocation reservations;
-tool retries do not consume extra slots, and exhaustion is persisted before
-another policy call.
-Application routes use narrow DTOs and stable JSON errors; the outer Host
-boundary can instead return a plain 400 or empty Nginx 444. These controls
-reduce risk, but the demo has no authentication or tenant isolation and must
-not be exposed as a production control plane.
+只有注册且通过 schema 验证的工具能够执行，不提供任意 shell 执行能力。输入和输出由 Pydantic 验证。追踪在持久化前完成脱敏，请求体大小受限，CORS 来源显式配置，Host 值使用精确允许列表，Nginx 则拒绝未知虚拟主机。通过 Docker Compose 提供的浏览器响应禁止嵌入框架。可选提供商要求远程地址使用 HTTPS、禁用重定向、请求 `identity` 编码、在遍历响应体前拒绝编码响应，并限制总时长和流式响应字节数。其凭证会被脱敏；若返回动作反射了该凭证，则会在进入编排或持久化前被拒绝。
 
-## Likely follow-up questions
+每次运行还通过持久化的调用前预留，限制新的策略调用次数；工具重试不消耗额外名额，额度耗尽状态会在下一次策略调用前持久化。
 
-**How would you scale it beyond one process?**  Move durable state to PostgreSQL,
-replace local claim timing with database-backed leases using server time, use a
-queue for resumable execution, and preserve the same idempotency and trace
-contracts. Add migrations and contention/load tests before horizontal scale.
+应用路由使用精简 DTO 和稳定 JSON 错误；外层 Host 边界也可能直接返回 400 或空 Nginx 444。这些控制可以降低风险，但演示不提供身份认证或租户隔离，不应作为生产控制平面对外暴露。
 
-**How would you evaluate a real model?**  Keep the frozen scripted suite as the
-orchestration control, add a separate provider-backed suite, record model and
-prompt versions, repeat cases over seeds, separate deterministic safety checks
-from statistical quality metrics, and publish uncertainty and cost.
+## 常见追问
 
-**How is approval replay bounded today?**  The client must echo the run's
-current action step and fingerprint. One SQLite transaction records a decision
-only while the run is still waiting for that exact action; stale targets are
-rejected and exact duplicates converge. Authentication, authorization, trusted
-actor identity, and approval expiry remain production work.
+**如何扩展到单进程之外？** 将持久化状态迁移到 PostgreSQL；使用基于数据库租约和服务端时间的机制替代本地占用计时；通过队列实现可恢复执行；继续沿用相同的幂等与追踪契约。横向扩展前还应加入数据库迁移及争用/负载测试。
 
-**What does the action budget count?**  Each new policy call reserves one
-durable slot before invocation, so cancellation cannot reset the allowance. A
-returned `finish` consumes that reservation; tool retries do not. A pending
-approval resumes the action selected before the pause without another
-reservation. At the limit, the runtime atomically records terminal state and
-`run.failed` with `action_budget_exhausted`, without one more policy call.
+**如何评测真实模型？** 保留冻结的脚本化套件作为编排对照组；增加独立的提供商驱动测试套件；记录模型与提示词版本；基于不同种子重复运行场景；将确定性安全检查与统计质量指标分离；并公开不确定性和成本。
 
-**What failure was hardest?**  Cross-instance approval races are more subtle
-than button debouncing. The tests instantiate two application objects over the
-same SQLite database and force competing decisions, proving same-decision
-idempotency and conflicting-decision convergence at that persistence boundary.
+**当前如何限制审批重放？** 客户端必须回传该运行当前动作的步骤与指纹。仅当运行仍在等待这一精确动作时，SQLite 事务才会记录决策；过期目标会被拒绝，完全相同的重复请求则会收敛。身份认证、授权、可信操作者身份和审批有效期仍属于生产化工作。
 
-**What would you build next?**  PostgreSQL migrations, authenticated users and
-RBAC, distributed workers, OpenTelemetry export, property-based state-machine
-tests, and a separate statistically grounded model evaluation track.
+**动作预算统计什么？** 每次新的策略调用会在执行前持久化预留一个名额，因此取消操作无法重置额度。返回的 `finish` 也消耗这次预留；工具重试不会。等待中的审批恢复暂停前已选定的动作，不会再次预留。到达上限时，运行时会原子记录终态和包含 `action_budget_exhausted` 的 `run.failed`，且不会再发起一次策略调用。
 
-## Honest limitations
+**最棘手的故障是什么？** 跨实例审批竞态比按钮防抖更隐蔽。测试会基于同一 SQLite 数据库创建两个应用实例并触发竞争决策，证明相同决策具有幂等性、冲突决策能在该持久化边界收敛。
 
-- Six synthetic scenarios cannot represent real-world incident diversity.
-- The benchmark policy is scripted, so no claim is made about LLM reasoning
-  quality.
-- SQLite and in-process execution target a local single-node demo.
-- There is no authentication, authorization, tenancy, or secrets manager.
-- Tool side effects are simulated; this is not a production incident executor.
+**下一步会构建什么？** PostgreSQL 迁移、经过身份认证的用户与 RBAC、分布式工作进程、OpenTelemetry 导出、基于属性的状态机测试，以及独立且具备统计依据的模型评测路线。
 
-These constraints are deliberate. They keep the repository runnable by a
-reviewer while making the tested reliability contracts precise.
+## 如实说明的局限性
+
+- 六个合成场景无法代表真实世界事件的多样性。
+- 基准策略是脚本化的，因此不对 LLM 推理质量作出结论。
+- SQLite 与进程内执行面向本地单节点演示。
+- 不提供身份认证、授权、租户机制或秘密管理器。
+- 工具副作用均为模拟；本项目不是生产事件响应执行器。
+
+这些约束是有意保留的：它们让评审者能够直接运行仓库，同时使经过测试的可靠性契约保持精确。

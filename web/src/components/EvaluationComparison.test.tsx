@@ -9,20 +9,20 @@ describe("EvaluationComparison", () => {
 
     expect(screen.getByText("58.4%")).toBeVisible();
     expect(screen.getByText("91.7%")).toBeVisible();
-    expect(screen.getByText("+33.3 percentage points")).toBeVisible();
-    expect(screen.getAllByText("Improved").length).toBeGreaterThan(0);
+    expect(screen.getByText("+33.3 个百分点")).toBeVisible();
+    expect(screen.getAllByText("已改善").length).toBeGreaterThan(0);
   });
 
   it("uses lower-is-better direction for invalid outputs and latency", () => {
     render(<EvaluationComparison report={evaluationFixture()} />);
 
-    const invalid = screen.getByRole("row", { name: /Accepted invalid outputs/i });
-    const latency = screen.getByRole("row", { name: /P95 latency/i });
-    expect(within(invalid).getByText("Improved")).toBeVisible();
-    expect(within(latency).getByText("Regressed")).toBeVisible();
+    const invalid = screen.getByRole("row", { name: /接受的无效输出/i });
+    const latency = screen.getByRole("row", { name: /P95 延迟/i });
+    expect(within(invalid).getByText("已改善")).toBeVisible();
+    expect(within(latency).getByText("有回退")).toBeVisible();
   });
 
-  it("renders null recovery as Not available", () => {
+  it("renders null recovery as unavailable", () => {
     render(
       <EvaluationComparison
         report={evaluationFixture(
@@ -32,6 +32,6 @@ describe("EvaluationComparison", () => {
       />,
     );
 
-    expect(screen.getAllByText("Not available").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("暂不可用").length).toBeGreaterThanOrEqual(2);
   });
 });

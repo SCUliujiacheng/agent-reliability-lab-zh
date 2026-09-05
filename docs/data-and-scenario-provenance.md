@@ -1,74 +1,55 @@
-# Data and scenario provenance
+# 数据与场景来源
 
-Agent Reliability Lab is intentionally self-contained. The default demo and
-benchmark use no scraped corpus, production incident data, customer records,
-or hidden model-generated labels.
+Agent Reliability Lab 有意设计为完全自包含。默认演示与基准测试不使用抓取语料、生产事故数据、客户记录或隐藏的模型生成标签。
 
-## What the repository contains
+## 仓库内容
 
-- Six hand-authored YAML scenarios under `scenarios/incident-response/`.
-- A deterministic in-memory incident backend with typed inputs and outputs.
-- Explicit fault rules that activate at a named tool, logical action, and
-  attempt number.
-- Expected tool sequences and outcomes stored beside each scenario.
-- A committed JSON report containing the manifest, hashes, ordered trace
-  evidence, exact metrics, and execution provenance.
+- `scenarios/incident-response/` 下六个手工编写的 YAML 场景。
+- 一个具有类型化输入与输出的确定性内存事件响应后端。
+- 在指定工具、逻辑动作和尝试次数触发的显式故障规则。
+- 与各场景一同存储的预期工具序列和结果。
+- 一份已提交的 JSON 报告，包含清单、哈希、有序追踪证据、精确指标和执行来源信息。
 
-No scenario contains personal data. Example service names, deployment IDs, log
-messages, actors, and incident descriptions are synthetic fixtures created for
-this repository.
+场景均不包含个人数据。示例服务名、部署 ID、日志消息、操作者和事件描述都是专为本仓库创建的合成测试数据。
 
-## Frozen suite manifest
+## 冻结测试套件清单
 
-| Scenario | Purpose | Injected fault | Expected outcome |
+| 场景 | 目的 | 注入故障 | 预期结果 |
 | --- | --- | --- | --- |
-| `normal-success` | Control path without a fault | none | `diagnosed` |
-| `timeout-recovery` | Verify bounded retry after a timeout | first `search_recent_logs` attempt | `diagnosed` |
-| `rate-limit-recovery` | Verify bounded retry after rate limiting | first `get_deployment` attempt | `diagnosed` |
-| `malformed-output-rejected` | Exercise output-schema rejection | malformed `get_deployment` response | `invalid_output` |
-| `permanent-invalid-input` | Reject invalid input before execution | none; input is permanently invalid | `invalid_input` |
-| `approval-reconstruction` | Rebuild services, approve, and execute a write once | durable human approval boundary | `prepared` |
+| `normal-success` | 无故障的控制路径 | `none` | `diagnosed` |
+| `timeout-recovery` | 验证超时后的有界重试 | 首次调用 `search_recent_logs` | `diagnosed` |
+| `rate-limit-recovery` | 验证限流后的有界重试 | 首次调用 `get_deployment` | `diagnosed` |
+| `malformed-output-rejected` | 验证输出 schema 拒绝机制 | 畸形 `get_deployment` 响应 | `invalid_output` |
+| `permanent-invalid-input` | 在执行前拒绝无效输入 | `none`；输入永久无效 | `invalid_input` |
+| `approval-reconstruction` | 重建服务、审批并执行一次写操作 | 持久化人工审批边界 | `prepared` |
 
-## Identity and integrity
+## 身份与完整性
 
-Each scenario is loaded into a strict model and hashed from its exact file
-bytes. The evaluation report also carries a canonical suite manifest with:
+每个场景都会被加载到严格模型中，并根据文件的精确字节计算哈希。评测报告还包含一份规范化测试套件清单，其中记录：
 
-- relative path, scenario ID, version, and SHA-256;
-- initial context and declared faults;
-- canonical logical actions and action fingerprints;
-- expected output digests for deterministic tools;
-- expected tool sequence, outcome, and approval requirement.
+- 相对路径、场景 ID、版本和 SHA-256；
+- 初始上下文和已声明故障；
+- 规范化逻辑动作及动作指纹；
+- 确定性工具的预期输出摘要；
+- 预期工具序列、结果和审批要求。
 
-The suite hash commits to that complete manifest. The regression gate does not
-trust the report's headline metrics; it reconstructs them from cases and ordered
-trace evidence, validates trace and scenario identities, and rejects
-incomparable or internally inconsistent inputs.
+测试套件哈希绑定上述完整清单。回归门禁不信任报告中的核心汇总指标；它会根据场景和有序追踪证据重建指标，验证追踪与场景身份，并拒绝不可比较或内部不一致的输入。
 
-Both the current report and an optional baseline must identify a full lowercase
-40-character Git revision and record `git_dirty: false`. Their revisions may
-differ because a baseline is expected to predate the implementation under test.
-This validates a clean, well-formed provenance claim; repository history and CI
-remain responsible for retaining and authenticating the referenced commits.
+当前报告与可选基线都必须标明 40 位小写完整 Git 修订号，并记录 `git_dirty: false`。两者的修订号可以不同，因为基线通常早于被测实现。这只能验证来源声明格式正确且工作树干净；所引用提交的保留与真实性仍由仓库历史和 CI 负责。
 
-## Runtime evidence
+## 运行时证据
 
-Every run receives distinct run and trace UUIDs. Events have monotonically
-increasing sequence numbers and retain the minimum payload needed to explain:
+每次运行都会获得独立的运行 UUID 和追踪 UUID。事件采用单调递增的序列号，只保留解释以下内容所需的最小载荷：
 
-- policy decisions;
-- tool attempts, faults, failures, retries, and validated successes;
-- durable checkpoints;
-- approval decisions;
-- terminal success or failure.
+- 策略决策；
+- 工具尝试、故障、失败、重试和通过验证的成功结果；
+- 持久化检查点；
+- 审批决策；
+- 终态成功或失败。
 
-Stored and exported payloads pass through recursive redaction. Authorization,
-token, secret, password, private-key, API-key, and credential field variants,
-plus configured secret values, are replaced before persistence. Metric names
-such as `prompt_tokens` and `token_count` remain available. The API exposes a
-deliberately narrower trace DTO than the internal event model.
+存储和导出的载荷都会经过递归脱敏。`Authorization`、`token`、`secret`、`password`、`private-key`、`API-key`、`credential` 等字段变体，以及显式配置的秘密值，都会在持久化前被替换。`prompt_tokens` 和 `token_count` 等指标名称仍会保留。API 对外提供的追踪 DTO 有意比内部事件模型更窄。
 
-## Reproduction contract
+## 复现契约
 
 ```bash
 uv sync --dev --locked
@@ -76,14 +57,8 @@ uv run arl eval scenarios/incident-response --output artifacts/current-report.js
 uv run arl gate artifacts/current-report.json --baseline benchmarks/baseline-report.json
 ```
 
-The scripted benchmark is deterministic in behavior, but runtime UUIDs,
-timestamps, and latency measurements vary. Baseline normalization preserves
-claim-relevant evidence while keeping version-controlled provenance explicit.
+脚本化基准测试的行为具有确定性，但运行 UUID、时间戳和延迟测量值会变化。基线规范化既保留与结论相关的证据，也明确记录版本控制来源。
 
-## Extending the suite responsibly
+## 负责任地扩展测试套件
 
-New scenarios should introduce one clearly named behavior, declare exact
-expected outcomes, and add tests for both the scenario loader and the gate.
-Do not mix real credentials or production logs into YAML fixtures. If a new
-backend is nondeterministic, keep it out of the headline exact benchmark or
-publish a separate evaluation with its own grader and limitations.
+新增场景应只引入一种名称明确的行为，声明精确预期结果，并为场景加载器和门禁同时添加测试。切勿将真实凭证或生产日志写入 YAML 测试数据。如果新后端具有非确定性，请勿将其纳入核心精确基准测试；应另行发布评测，并明确其评分器和局限性。

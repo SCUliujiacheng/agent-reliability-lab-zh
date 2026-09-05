@@ -1,100 +1,75 @@
-# Benchmark results
+# 基准测试结果
 
-Agent Reliability Lab evaluates the same six deterministic incident-response
-scenarios in two execution modes:
+Agent Reliability Lab 使用两种执行模式，对同一组由六个确定性事件响应场景组成的测试套件进行评测：
 
-- **fragile**: one attempt per tool call;
-- **resilient**: bounded retries for errors classified as transient.
+- **fragile**：每次工具调用只尝试一次；
+- **resilient**：对被判定为瞬时错误的故障执行有界重试。
 
-The committed baseline is an evidence artifact, not a claim about arbitrary
-agents or production workloads. It uses the local scripted policy, synthetic
-tools, and exact graders; it makes no network or model-provider calls.
+仓库中提交的基线是一份证据制品，并非针对任意智能体或生产工作负载的泛化结论。它使用本地脚本化策略、合成工具和精确评分器，不发起网络请求，也不调用模型提供商。
 
-## Headline result
+## 核心结果
 
-| Metric | Fragile | Resilient | Difference |
+| 指标 | Fragile | Resilient | 差异 |
 | --- | ---: | ---: | ---: |
-| Task correctness | 4 / 6 (66.7%) | 6 / 6 (100.0%) | +33.3 percentage points |
-| Verified transient-fault recovery | 0 / 2 (0.0%) | 2 / 2 (100.0%) | +100.0 percentage points |
-| Tool-sequence accuracy | 94.4% | 100.0% | +5.6 percentage points |
-| Invalid outputs accepted | 0 / 8 | 0 / 11 | 0 in both modes |
-| Unnecessary logical calls | 0 | 0 | unchanged |
-| Retry attempts | 0 | 2 | +2, both evidence-backed |
+| 任务正确率 | 4 / 6 (66.7%) | 6 / 6 (100.0%) | +33.3 个百分点 |
+| 已验证瞬时故障恢复率 | 0 / 2 (0.0%) | 2 / 2 (100.0%) | +100.0 个百分点 |
+| 工具序列准确率 | 94.4% | 100.0% | +5.6 个百分点 |
+| 被接受的无效输出 | 0 / 8 | 0 / 11 | 两种模式均为 0 |
+| 非必要逻辑调用 | 0 | 0 | 无变化 |
+| 重试次数 | 0 | 2 | +2，均有证据支持 |
 
-The two contrast cases are `timeout-recovery` and `rate-limit-recovery`.
-Fragile execution fails after the injected first-attempt fault; resilient
-execution records the failed attempt, retries once, and reaches the declared
-outcome.
+两个对照场景是 `timeout-recovery` 和 `rate-limit-recovery`。Fragile 执行在注入的首次故障后失败；resilient 执行会记录失败尝试，重试一次，并达到声明的预期结果。
 
-## Exact denominators
+## 精确分母
 
-### Task correctness
+### 任务正确率
 
-`correct cases / all cases`, evaluated independently for each mode. A case is
-correct only when its observed outcome matches the frozen scenario outcome and
-the trace-derived terminal semantics agree.
+`正确场景数 / 全部场景数`，两种模式分别计算。仅当观测结果与冻结场景中声明的结果一致，且由追踪记录推导的终态语义也一致时，该场景才算正确。
 
-### Recovery rate
+### 恢复率
 
-`recovered verified transient faults / verified transient faults`.
+`已恢复的已验证瞬时故障数 / 已验证瞬时故障总数`。
 
-The denominator is reconstructed from declared faults and ordered trace
-evidence. A retry alone is not counted as recovery: the matching logical action
-must subsequently succeed. The frozen suite has two verified transient faults
-per mode—one timeout and one rate limit.
+分母由已声明故障和有序追踪证据重建。仅发生重试不算恢复：对应的逻辑动作随后必须成功。冻结套件在每种模式下均包含两个已验证瞬时故障——一个超时和一个限流。
 
-### Tool-sequence accuracy
+### 工具序列准确率
 
-For each case, the grader computes the longest common subsequence between the
-expected and observed logical tool sequences, divided by the longer sequence.
-The published value is the macro-average over six cases. Retry attempts do not
-masquerade as extra logical calls.
+评分器为每个场景计算预期逻辑工具序列与实际序列的最长公共子序列（Longest Common Subsequence），再除以两者中的较长序列长度。发布值是六个场景的宏平均值。重试次数不会被伪装成额外的逻辑调用。
 
-### Invalid-output rate
+### 无效输出率
 
-`invalid accepted outputs / all accepted outputs`.
+`被接受的无效输出数 / 全部被接受输出数`。
 
-The malformed-output scenario injects one schema-invalid response per mode.
-Both modes detect and reject it at the typed tool boundary. The headline count
-is therefore zero accepted invalid outputs, while the report retains separate
-detected and rejected counts.
+畸形输出场景会在每种模式下各注入一次不符合数据模式（schema）的响应。两种模式都会在类型化工具边界检测并拒绝该响应。因此，核心统计中被接受的无效输出为零，同时报告仍分别保留检测数与拒绝数。
 
-## Latency is diagnostic, not a performance claim
+## 延迟仅用于诊断，不代表性能结论
 
-The baseline records nearest-rank local `perf_counter_ns` measurements:
+基线记录本地 `perf_counter_ns` 的最近秩（nearest-rank）测量值：
 
-| Metric | Fragile | Resilient |
+| 指标 | Fragile | Resilient |
 | --- | ---: | ---: |
-| P50 case latency | 34.4 ms | 44.7 ms |
-| P95 case latency | 77.6 ms | 68.7 ms |
+| P50 场景延迟 | 34.4 ms | 44.7 ms |
+| P95 场景延迟 | 77.6 ms | 68.7 ms |
 
-These values help detect gross regressions in one environment. They are not a
-cross-machine throughput benchmark and are not enforced as headline quality
-claims.
+这些数值用于发现单一环境中的显著回归，不是跨机器吞吐量基准，也不作为核心质量结论执行门禁。
 
-## Reproduce and verify
+## 复现与验证
 
 ```bash
 uv run arl eval scenarios/incident-response --output artifacts/current-report.json
 uv run arl gate artifacts/current-report.json --baseline benchmarks/baseline-report.json
 ```
 
-The gate recomputes summaries from case and trace evidence before applying
-thresholds. It fails closed for altered suite identity, duplicate evidence IDs,
-non-comparable baselines, malformed or dirty Git provenance, mismatched
-summaries, fabricated recovery, changed tool outputs, or malformed report
-structure. Baseline and current revisions can differ, but both must be full
-lowercase 40-character revisions produced from clean worktrees.
+门禁在应用阈值前，会根据场景与追踪证据重新计算汇总结果。如果发现测试套件身份被更改、证据 ID 重复、基线不可比较、Git 来源信息畸形或工作树不干净、汇总不匹配、恢复证据伪造、工具输出改变或报告结构畸形，门禁都会以失败关闭（fail closed）。基线与当前版本可以不同，但两者都必须是由干净工作树产生的 40 位小写完整修订号。
 
-Baseline provenance:
+基线来源信息：
 
-- report/schema version: `6`
-- grader: `exact-v6`
-- policy: `scripted`
-- suite hash: `21d15bd476344661681b5740ffcced169460a2201c9d945cc8e575ece983a23c`
-- Git revision: `5477bd965b254378849941c8a06888c202a373eb`
-- Git dirty: `false`
-- credential cost: `$0`
+- 报告/schema 版本：`6`
+- 评分器：`exact-v6`
+- 策略：`scripted`
+- 测试套件哈希：`21d15bd476344661681b5740ffcced169460a2201c9d945cc8e575ece983a23c`
+- Git 修订号：`5477bd965b254378849941c8a06888c202a373eb`
+- Git dirty 标记：`false`
+- 凭证成本：`$0`
 
-The baseline is regenerated after release-source changes so its clean Git
-revision points at the exact evaluated implementation.
+发布源代码发生变化后会重新生成基线，确保其干净的 Git 修订号指向实际接受评测的实现。

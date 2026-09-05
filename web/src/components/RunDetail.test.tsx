@@ -22,16 +22,34 @@ describe("RunDetail", () => {
     );
 
     expect(screen.getByRole("heading", { name: "timeout-recovery" })).toBeVisible();
-    expect(screen.getByText("Succeeded")).toBeVisible();
-    for (const term of ["Mode", "Attempts", "Outcome", "Duration"]) {
+    expect(screen.getByText("已诊断（diagnosed）")).toBeVisible();
+    expect(screen.getByText("已成功")).toBeVisible();
+    for (const term of ["模式", "尝试次数", "结果", "耗时"]) {
       expect(screen.getByText(term)).toBeVisible();
     }
     expect(screen.getByText("11111111-1111-1111-1111-111111111111")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Export trace" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Back to Runs" }));
-    await user.click(screen.getByRole("button", { name: "Run again" }));
+    expect(screen.getByRole("button", { name: "导出轨迹" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "返回运行记录" }));
+    await user.click(screen.getByRole("button", { name: "再次运行" }));
     expect(onBack).toHaveBeenCalledOnce();
     expect(onRunAgain).toHaveBeenCalledOnce();
+  });
+
+  it("rounds sub-second run durations for a readable summary", () => {
+    render(
+      <RunDetail
+        run={{ ...runFixture(), duration_ms: 214.211 }}
+        events={[]}
+        state="ready"
+        mutationState="idle"
+        onBack={vi.fn()}
+        onRunAgain={vi.fn()}
+        onApprove={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("214.2ms")).toBeVisible();
+    expect(screen.queryByText("214.211ms")).not.toBeInTheDocument();
   });
 
   it("shows the exact reviewed action and submits that identity with the decision", async () => {
@@ -48,7 +66,7 @@ describe("RunDetail", () => {
         onApprove={onApprove}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Allow action" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "允许操作" })).not.toBeInTheDocument();
 
     rerender(
       <RunDetail
@@ -66,11 +84,11 @@ describe("RunDetail", () => {
       />,
     );
     expect(screen.getByText("prepare_rollback")).toBeVisible();
-    expect(screen.getByText("Step 1")).toBeVisible();
+    expect(screen.getByText("第 1 步")).toBeVisible();
     expect(screen.getByText(/deploy-2026-09-04-001/)).toBeVisible();
-    expect(screen.getByRole("button", { name: "Allow action" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Deny action" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Allow action" }));
+    expect(screen.getByRole("button", { name: "允许操作" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "拒绝操作" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "允许操作" }));
     expect(onApprove).toHaveBeenCalledWith(pendingApprovalFixture, true);
 
     rerender(
@@ -88,8 +106,8 @@ describe("RunDetail", () => {
         onApprove={vi.fn()}
       />,
     );
-    expect(screen.getByRole("button", { name: "Allow action" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Deny action" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "允许操作" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "拒绝操作" })).toBeDisabled();
   });
 
   it("preserves long identifiers, summary fields, and one hundred trace rows at mobile width", () => {
@@ -120,7 +138,7 @@ describe("RunDetail", () => {
 
     expect(screen.getByText(longId)).toBeVisible();
     expect(screen.getAllByTestId("trace-row")).toHaveLength(100);
-    for (const term of ["Mode", "Attempts", "Outcome", "Duration"]) {
+    for (const term of ["模式", "尝试次数", "结果", "耗时"]) {
       expect(screen.getByText(term)).toBeVisible();
     }
   });

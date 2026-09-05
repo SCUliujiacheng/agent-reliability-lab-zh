@@ -39,20 +39,20 @@ export function Overview({
     <header className="overview-header">
       <div>
         <p className="eyebrow">Agent Reliability Lab</p>
-        <h1>Deterministic recovery evidence</h1>
-        <p>Compare execution modes, inspect durable traces, and replay controlled reliability scenarios.</p>
+        <h1>可复现的智能体恢复证据</h1>
+        <p>对比执行模式、检查持久化轨迹，并复现受控的可靠性场景。</p>
       </div>
       <div className="overview-header__actions">
-        <span className="environment-label"><span aria-hidden="true" /> Local API</span>
+        <span className="environment-label"><span aria-hidden="true" /> 本地 API</span>
         <button
           type="button"
           className="primary-button"
           disabled={evaluating || state !== "ready"}
           onClick={onEvaluate}
         >
-          {evaluating ? "Running evaluation…" : "Run evaluation"}
+          {evaluating ? "正在评测…" : "运行评测"}
         </button>
-        <a className="secondary-button header-action" href="#scenarios">Run scenario</a>
+        <a className="secondary-button header-action" href="#scenarios">运行场景</a>
       </div>
     </header>
   );
@@ -63,11 +63,11 @@ export function Overview({
         {header}
         <section className="overview-error" role="alert">
           <div>
-            <p className="eyebrow">API unavailable</p>
-            <h2>Dashboard data could not be loaded</h2>
-            <p>Check the local API and retry. No partial response data has been displayed.</p>
+            <p className="eyebrow">API 不可用</p>
+            <h2>无法加载控制台数据</h2>
+            <p>请检查本地 API 后重试。控制台没有展示任何不完整的响应数据。</p>
           </div>
-          <button type="button" className="primary-button" onClick={onRetry}>Retry dashboard</button>
+          <button type="button" className="primary-button" onClick={onRetry}>重试加载</button>
         </section>
       </main>
     );
@@ -77,29 +77,29 @@ export function Overview({
     <main className="overview-page" id="overview">
       {header}
 
-      <section className="metrics-grid" aria-label="Reliability metrics">
+      <section className="metrics-grid" aria-label="可靠性指标">
         <MetricCard
-          label="Resilient correctness"
+          label="韧性模式正确率"
           value={formatRate(resilient?.task_correctness_rate)}
-          detail={evaluation ? "Latest evaluation" : "No evaluation report"}
+          detail={evaluation ? "最新评测" : "暂无评测报告"}
           tone="positive"
         />
         <MetricCard
-          label="Recovery"
+          label="故障恢复率"
           value={formatRate(resilient?.recovery_rate)}
-          detail="Transient faults recovered"
+          detail="已恢复的瞬时故障"
           tone="positive"
         />
         <MetricCard
-          label="Fragile correctness"
+          label="脆弱模式正确率"
           value={formatRate(fragile?.task_correctness_rate)}
-          detail="Latest evaluation"
+          detail="最新评测"
           tone="fragile"
         />
         <MetricCard
-          label="Accepted invalid outputs"
+          label="接受的无效输出"
           value={formatRate(resilient?.invalid_output_rate)}
-          detail="Resilient execution"
+          detail="韧性模式执行"
           tone={resilient?.invalid_output_rate === 0 ? "positive" : "fragile"}
         />
       </section>
@@ -108,9 +108,9 @@ export function Overview({
         <EvaluationComparison report={evaluation} />
       ) : (
         <section className="comparison comparison--empty" id="evaluations">
-          <p className="eyebrow">Latest evaluation</p>
-          <h2>No evaluations yet</h2>
-          <p>Run the frozen catalog suite to populate the benchmark comparison.</p>
+          <p className="eyebrow">最新评测</p>
+          <h2>暂无评测</h2>
+          <p>运行冻结的场景目录套件，即可生成基准对比。</p>
         </section>
       )}
 
@@ -118,10 +118,10 @@ export function Overview({
         <section className="runs-panel" id="runs" aria-labelledby="recent-runs-title">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Execution history</p>
-              <h2 id="recent-runs-title">Recent runs</h2>
+              <p className="eyebrow">执行历史</p>
+              <h2 id="recent-runs-title">最近运行</h2>
             </div>
-            <span>{runs.length} visible</span>
+            <span>显示 {runs.length} 条</span>
           </div>
           <RunList runs={runs} state={state} onSelect={onSelectRun} onRetry={onRetry} />
         </section>
@@ -129,8 +129,8 @@ export function Overview({
         <aside className="launcher-panel" id="scenarios" aria-labelledby="launcher-title">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Controlled replay</p>
-              <h2 id="launcher-title">Scenario launcher</h2>
+              <p className="eyebrow">受控复现</p>
+              <h2 id="launcher-title">场景启动器</h2>
             </div>
           </div>
           <ScenarioLauncher
@@ -145,14 +145,14 @@ export function Overview({
         <section className="trace-preview" aria-labelledby="trace-preview-title">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Execution trace</p>
-              <h2 id="trace-preview-title">Open a run to inspect its waterfall</h2>
+              <p className="eyebrow">执行轨迹</p>
+              <h2 id="trace-preview-title">打开一次运行，查看事件瀑布</h2>
             </div>
           </div>
           <div className="preview-steps" aria-hidden="true">
             <span /><span /><span /><span />
           </div>
-          <p>Trace events are requested only after a run is selected, keeping the overview bounded.</p>
+          <p>仅在选择运行后请求轨迹事件，让概览页的数据量始终受控。</p>
         </section>
       </div>
     </main>

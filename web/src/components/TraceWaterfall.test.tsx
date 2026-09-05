@@ -9,9 +9,9 @@ describe("TraceWaterfall", () => {
     render(<TraceWaterfall events={runtimeRetryTraceFixture} />);
 
     const rows = screen.getAllByTestId("trace-row").map((row) => row.textContent ?? "");
-    const timeout = rows.findIndex((row) => row.includes("timeout injected"));
-    const retry = rows.findIndex((row) => row.includes("Retry attempt 2"));
-    const recovered = rows.findIndex((row) => row.includes("recovered"));
+    const timeout = rows.findIndex((row) => row.includes("注入故障：超时（timeout）"));
+    const retry = rows.findIndex((row) => row.includes("第 2 次重试"));
+    const recovered = rows.findIndex((row) => row.includes("已恢复"));
     expect(timeout).toBeGreaterThan(-1);
     expect(retry).toBeGreaterThan(timeout);
     expect(recovered).toBeGreaterThan(retry);
@@ -22,13 +22,13 @@ describe("TraceWaterfall", () => {
 
     const rows = screen.getAllByTestId("trace-row");
     expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("Policy action"),
-      expect.stringContaining("search_recent_logs · attempt 1"),
-      expect.stringContaining("timeout injected"),
-      expect.stringContaining("search_recent_logs · tool_timeout"),
-      expect.stringContaining("Retry attempt 2 · search_recent_logs"),
-      expect.stringContaining("search_recent_logs · recovered"),
-      expect.stringContaining("Run checkpointed"),
+      expect.stringContaining("策略已选择操作"),
+      expect.stringContaining("search_recent_logs · 第 1 次尝试"),
+      expect.stringContaining("注入故障：超时（timeout）"),
+      expect.stringContaining("search_recent_logs · 工具超时（tool_timeout）"),
+      expect.stringContaining("第 2 次重试 · search_recent_logs"),
+      expect.stringContaining("search_recent_logs · 已恢复"),
+      expect.stringContaining("运行已建立检查点"),
     ]);
     expect(rows.map((row) => row.className)).toEqual([
       expect.stringContaining("trace-row--depth-0"),
@@ -52,6 +52,19 @@ describe("TraceWaterfall", () => {
 
     expect(screen.getByText(/diagnose_cache/)).toBeVisible();
     expect(screen.getByText("2.2s")).toBeVisible();
+  });
+
+  it("rounds sub-second durations instead of exposing floating-point noise", () => {
+    const precise = {
+      ...traceFixture[1],
+      id: "00000000-0000-0000-0000-000000000089",
+      duration_ms: 0.07329997606575489,
+    };
+
+    render(<TraceWaterfall events={[precise]} />);
+
+    expect(screen.getByText("0.1ms")).toBeVisible();
+    expect(screen.queryByText("0.07329997606575489ms")).not.toBeInTheDocument();
   });
 
   it("shows a clear placeholder for omitted and non-finite API durations", () => {
@@ -96,10 +109,10 @@ describe("TraceWaterfall", () => {
 
     render(<TraceWaterfall events={[isolatedStart, isolatedSuccess]} />);
 
-    expect(screen.getByText("search_recent_logs · attempt 2")).toBeVisible();
-    expect(screen.getByText("search_recent_logs · completed")).toBeVisible();
-    expect(screen.queryByText(/Retry/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/recovered/)).not.toBeInTheDocument();
+    expect(screen.getByText("search_recent_logs · 第 2 次尝试")).toBeVisible();
+    expect(screen.getByText("search_recent_logs · 已完成")).toBeVisible();
+    expect(screen.queryByText(/重试/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/已恢复/)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -141,10 +154,10 @@ describe("TraceWaterfall", () => {
 
     render(<TraceWaterfall events={[failed, secondStart, secondSuccess]} />);
 
-    expect(screen.getByText("search_recent_logs · attempt 2")).toBeVisible();
-    expect(screen.getByText("search_recent_logs · completed")).toBeVisible();
-    expect(screen.queryByText(/Retry/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/recovered/)).not.toBeInTheDocument();
+    expect(screen.getByText("search_recent_logs · 第 2 次尝试")).toBeVisible();
+    expect(screen.getByText("search_recent_logs · 已完成")).toBeVisible();
+    expect(screen.queryByText(/重试/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/已恢复/)).not.toBeInTheDocument();
   });
 
   it("requires a recovered success to close the started retry span", () => {
@@ -159,9 +172,9 @@ describe("TraceWaterfall", () => {
       />,
     );
 
-    expect(screen.getByText("Retry attempt 2 · search_recent_logs")).toBeVisible();
-    expect(screen.getByText("search_recent_logs · completed")).toBeVisible();
-    expect(screen.queryByText(/recovered/)).not.toBeInTheDocument();
+    expect(screen.getByText("第 2 次重试 · search_recent_logs")).toBeVisible();
+    expect(screen.getByText("search_recent_logs · 已完成")).toBeVisible();
+    expect(screen.queryByText(/已恢复/)).not.toBeInTheDocument();
   });
 
   it("derives bounded indentation from span lineage instead of action step", () => {

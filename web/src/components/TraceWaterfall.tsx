@@ -1,4 +1,5 @@
 import type { TraceEvent } from "../types";
+import { errorCodeLabel, faultKindLabel, outcomeLabel } from "../presentation";
 
 interface TraceWaterfallProps {
   events: TraceEvent[];
@@ -18,60 +19,68 @@ function numberValue(value: unknown, fallback = 1): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function humanize(value: string): string {
-  const text = value.replaceAll(".", " ").replaceAll("_", " ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
+const EVENT_LABELS: Readonly<Record<string, string>> = {
+  "policy.action": "策略已选择操作",
+  "run.checkpointed": "运行已建立检查点",
+  "run.waiting_approval": "运行等待审批",
+  "tool.output.validation_failed": "工具输出校验失败",
+  "tool.preflight.failed": "工具预检失败",
+  "tool.attempt.cancelled": "工具尝试已取消",
+  "approval.denied": "审批已拒绝",
+  "provider.request": "Provider 请求",
+  "provider.response": "Provider 响应",
+  "provider.failed": "Provider 调用失败",
+};
 
 function present(event: TraceEvent, retry: boolean, recovered: boolean): TracePresentation {
-  const tool = textValue(event.payload.tool_name, "Agent step");
+  const tool = textValue(event.payload.tool_name, "智能体步骤");
   const attempt = numberValue(event.payload.attempt);
 
   switch (event.event_type) {
     case "run.running":
-      return { title: "Agent started", meta: "Run entered execution", tone: "active" };
+      return { title: "智能体已启动", meta: "运行进入执行阶段", tone: "active" };
     case "tool.attempt.started":
       return retry
-        ? { title: `Retry attempt ${attempt} · ${tool}`, meta: "Tool execution", tone: "active" }
-        : { title: `${tool} · attempt ${attempt}`, meta: "Tool execution", tone: "neutral" };
+        ? { title: `第 ${attempt} 次重试 · ${tool}`, meta: "工具执行", tone: "active" }
+        : { title: `${tool} · 第 ${attempt} 次尝试`, meta: "工具执行", tone: "neutral" };
     case "fault.injected":
       return {
-        title: `${textValue(event.payload.kind, "fault")} injected`,
+        title: `注入故障：${faultKindLabel(textValue(event.payload.kind, "未知类型"))}`,
         meta: tool,
         tone: "warning",
       };
     case "tool.attempt.failed":
       return {
-        title: `${tool} · ${textValue(event.payload.code, "attempt failed")}`,
-        meta: event.payload.transient ? "Transient failure" : "Failure",
+        title: `${tool} · ${errorCodeLabel(textValue(event.payload.code, "尝试失败"))}`,
+        meta: event.payload.transient ? "瞬时故障" : "故障",
         tone: "danger",
       };
     case "tool.attempt.succeeded":
       return recovered
-        ? { title: `${tool} · recovered`, meta: `Attempt ${attempt} succeeded`, tone: "success" }
-        : { title: `${tool} · completed`, meta: "Tool succeeded", tone: "success" };
+        ? { title: `${tool} · 已恢复`, meta: `第 ${attempt} 次尝试成功`, tone: "success" }
+        : { title: `${tool} · 已完成`, meta: "工具执行成功", tone: "success" };
     case "run.succeeded":
       return {
-        title: `Run completed · ${textValue(event.payload.outcome, "success")}`,
-        meta: "Terminal success",
+        title: `运行已完成 · ${outcomeLabel(textValue(event.payload.outcome, "success"))}`,
+        meta: "终态成功",
         tone: "success",
       };
     case "run.failed":
       return {
-        title: `Run failed · ${textValue(event.payload.code, "unknown error")}`,
-        meta: "Terminal failure",
+        title: `运行失败 · ${errorCodeLabel(textValue(event.payload.code, "未知错误"))}`,
+        meta: "终态失败",
         tone: "danger",
       };
     case "approval.requested":
-      return { title: "Approval requested", meta: tool, tone: "warning" };
+      return { title: "等待审批", meta: tool, tone: "warning" };
     case "approval.recorded":
       return {
-        title: event.payload.allow ? "Action allowed" : "Action denied",
-        meta: textValue(event.payload.actor, "Reviewer decision"),
+        title: event.payload.allow ? "操作已允许" : "操作已拒绝",
+        meta: textValue(event.payload.actor, "审核决定"),
         tone: event.payload.allow ? "success" : "danger",
       };
     default:
-      return { title: humanize(event.event_type), meta: tool, tone: "neutral" };
+      return { title: EVENT_LABELS[event.event_type] ?? event.event_type, meta: tool, tone: "neutral" };
   }
 }
 
@@ -254,11 +263,11 @@ function eventDepths(events: TraceEvent[]): Map<string, number> {
 function formatDuration(durationMs: number | null | undefined): string {
   if (typeof durationMs !== "number" || !Number.isFinite(durationMs)) return "—";
   if (durationMs >= 1000) return `${(Math.round(durationMs / 100) / 10).toFixed(1)}s`;
-  return `${durationMs}ms`;
+  return `${durationMs.toLocaleString("zh-CN", { maximumFractionDigits: 1 })}ms`;
 }
 
 function eventTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("zh-CN", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -269,8 +278,8 @@ export function TraceWaterfall({ events }: TraceWaterfallProps) {
   if (events.length === 0) {
     return (
       <div className="state-panel trace-empty">
-        <strong>No trace events yet</strong>
-        <p>Events will appear as the agent advances through the scenario.</p>
+        <strong>暂无轨迹事件</strong>
+        <p>智能体在场景中推进时，事件会显示在这里。</p>
       </div>
     );
   }
@@ -279,7 +288,7 @@ export function TraceWaterfall({ events }: TraceWaterfallProps) {
   const depths = eventDepths(events);
 
   return (
-    <ol className="trace-list" aria-label="Execution trace">
+    <ol className="trace-list" aria-label="执行轨迹">
       {events.map((event) => {
         const presentation = present(
           event,

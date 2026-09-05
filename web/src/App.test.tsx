@@ -59,7 +59,7 @@ describe("App workflows", () => {
     render(<App />);
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(screen.getByRole("button", { name: "Run evaluation" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "运行评测" })).toBeDisabled();
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual(
       expect.arrayContaining(["/v1/runs?limit=8", "/v1/evaluations?limit=1", "/v1/scenarios"]),
     );
@@ -69,7 +69,7 @@ describe("App workflows", () => {
       requests[2].resolve(response({ items: [scenarioFixture] }));
       await Promise.all(requests.map((item) => item.promise));
     });
-    expect(screen.getByRole("button", { name: "Run evaluation" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "运行评测" })).toBeEnabled();
   });
 
   it("launches an API scenario and opens its live run detail", async () => {
@@ -87,13 +87,13 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.selectOptions(await screen.findByLabelText("Scenario"), "timeout-recovery");
-    await user.selectOptions(screen.getByLabelText("Mode"), "resilient");
-    await user.click(screen.getByRole("button", { name: "Start run" }));
+    await user.selectOptions(await screen.findByLabelText("场景"), "timeout-recovery");
+    await user.selectOptions(screen.getByLabelText("模式"), "resilient");
+    await user.click(screen.getByRole("button", { name: "启动运行" }));
 
     expect(await screen.findByRole("heading", { name: "timeout-recovery" })).toBeVisible();
-    expect(screen.getByText("Succeeded")).toBeVisible();
-    expect(await screen.findByText(/timeout injected/)).toBeVisible();
+    expect(screen.getByText("已成功")).toBeVisible();
+    expect(await screen.findByText(/注入故障：超时（timeout）/)).toBeVisible();
   });
 
   it("runs the launcher through approval, completion, and refreshed trace", async () => {
@@ -132,7 +132,7 @@ describe("App workflows", () => {
         expect(JSON.parse(String(init.body))).toEqual({
           actor: "dashboard-reviewer",
           allow: true,
-          reason: "Approved in reliability dashboard",
+          reason: "在可靠性控制台中批准",
           action_step: pendingApprovalFixture.action_step,
           action_fingerprint: pendingApprovalFixture.action_fingerprint,
         });
@@ -152,11 +152,11 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "Start run" }));
-    await user.click(await screen.findByRole("button", { name: "Allow action" }));
+    await user.click(await screen.findByRole("button", { name: "启动运行" }));
+    await user.click(await screen.findByRole("button", { name: "允许操作" }));
 
-    expect(await screen.findByText("Succeeded")).toBeVisible();
-    expect(await screen.findByText(/timeout injected/)).toBeVisible();
+    expect(await screen.findByText("已成功")).toBeVisible();
+    expect(await screen.findByText(/注入故障：超时（timeout）/)).toBeVisible();
     expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/approvals"))).toHaveLength(1);
   });
 
@@ -190,8 +190,8 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Open run approval-reconstruction/ }));
-    const allow = await screen.findByRole("button", { name: "Allow action" });
+    await user.click(await screen.findByRole("button", { name: /打开运行 approval-reconstruction/ }));
+    const allow = await screen.findByRole("button", { name: "允许操作" });
     await user.click(allow);
     await user.click(allow);
     expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/approvals"))).toHaveLength(1);
@@ -200,9 +200,9 @@ describe("App workflows", () => {
       approval.resolve(response(completed));
       await approval.promise;
     });
-    expect(await screen.findByText("Succeeded")).toBeVisible();
-    expect(screen.getByRole("status")).toHaveTextContent("Action allowed");
-    await user.click(screen.getByRole("button", { name: "Dismiss notification" }));
+    expect(await screen.findByText("已成功")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("操作已允许");
+    await user.click(screen.getByRole("button", { name: "关闭通知" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
@@ -235,13 +235,13 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Open run approval-reconstruction/ }));
-    const allow = await screen.findByRole("button", { name: "Allow action" });
+    await user.click(await screen.findByRole("button", { name: /打开运行 approval-reconstruction/ }));
+    const allow = await screen.findByRole("button", { name: "允许操作" });
     vi.useFakeTimers();
     try {
       fireEvent.click(allow);
       await vi.waitFor(() => {
-        expect(screen.getByRole("status")).toHaveTextContent("Action allowed");
+        expect(screen.getByRole("status")).toHaveTextContent("操作已允许");
       });
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5_000);
@@ -287,12 +287,12 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Open run approval-reconstruction/ }));
-    await user.click(await screen.findByRole("button", { name: "Deny action" }));
+    await user.click(await screen.findByRole("button", { name: /打开运行 approval-reconstruction/ }));
+    await user.click(await screen.findByRole("button", { name: "拒绝操作" }));
 
     await waitFor(() => expect(detailCalls).toBeGreaterThanOrEqual(2));
     expect(approvalCalls).toBe(1);
-    expect(screen.getByRole("status")).toHaveTextContent("Approval state refreshed");
+    expect(screen.getByRole("status")).toHaveTextContent("审批状态已刷新");
   });
 
   it("prevents a deferred A response from replacing newer run B", async () => {
@@ -315,8 +315,8 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Open run run-a/ }));
-    await user.click(screen.getByRole("button", { name: /Open run run-b/ }));
+    await user.click(await screen.findByRole("button", { name: /打开运行 run-a/ }));
+    await user.click(screen.getByRole("button", { name: /打开运行 run-b/ }));
     expect(await screen.findByRole("heading", { name: "run-b" })).toBeVisible();
 
     await act(async () => {
@@ -371,10 +371,10 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Open run approval-a/ }));
-    await user.click(await screen.findByRole("button", { name: "Allow action" }));
-    await user.click(screen.getByRole("button", { name: "Back to Runs" }));
-    await user.click(await screen.findByRole("button", { name: /Open run run-b/ }));
+    await user.click(await screen.findByRole("button", { name: /打开运行 approval-a/ }));
+    await user.click(await screen.findByRole("button", { name: "允许操作" }));
+    await user.click(screen.getByRole("button", { name: "返回运行记录" }));
+    await user.click(await screen.findByRole("button", { name: /打开运行 run-b/ }));
     expect(await screen.findByRole("heading", { name: "run-b" })).toBeVisible();
 
     await act(async () => {
@@ -383,8 +383,8 @@ describe("App workflows", () => {
     });
 
     expect(screen.getByRole("heading", { name: "run-b" })).toBeVisible();
-    expect(screen.queryByText("Loading run detail…")).not.toBeInTheDocument();
-    expect(screen.queryByText("Action allowed")).not.toBeInTheDocument();
+    expect(screen.queryByText("正在加载运行详情…")).not.toBeInTheDocument();
+    expect(screen.queryByText("操作已允许")).not.toBeInTheDocument();
     expect(runATraceCalls).toBe(1);
   });
 
@@ -393,8 +393,8 @@ describe("App workflows", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<App />);
 
-    expect(await screen.findByText("No runs yet")).toBeVisible();
-    expect(screen.getByText("No evaluations yet")).toBeVisible();
+    expect(await screen.findByText("暂无运行记录")).toBeVisible();
+    expect(screen.getByText("暂无评测")).toBeVisible();
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/trace"))).toBe(false);
   });
 
@@ -411,12 +411,12 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const runEvaluation = await screen.findByRole("button", { name: "Run evaluation" });
+    const runEvaluation = await screen.findByRole("button", { name: "运行评测" });
     await waitFor(() => expect(runEvaluation).toBeEnabled());
     await user.click(runEvaluation);
     await user.click(runEvaluation);
 
-    expect(screen.getByRole("button", { name: "Running evaluation…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "正在评测…" })).toBeDisabled();
     expect(
       fetchMock.mock.calls.filter(
         ([url, init]) => String(url) === "/v1/evaluations" && init?.method === "POST",
@@ -429,11 +429,11 @@ describe("App workflows", () => {
     });
 
     expect(
-      within(screen.getByRole("region", { name: "Reliability metrics" })).getByText("91.7%"),
+      within(screen.getByRole("region", { name: "可靠性指标" })).getByText("91.7%"),
     ).toBeVisible();
-    expect(screen.queryByText("No evaluations yet")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Evaluation complete");
-    expect(screen.getByRole("button", { name: "Run evaluation" })).toBeEnabled();
+    expect(screen.queryByText("暂无评测")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("评测完成");
+    expect(screen.getByRole("button", { name: "运行评测" })).toBeEnabled();
   });
 
   it("keeps evaluation creation retryable after a stable API failure", async () => {
@@ -457,14 +457,14 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const runEvaluation = await screen.findByRole("button", { name: "Run evaluation" });
+    const runEvaluation = await screen.findByRole("button", { name: "运行评测" });
     await waitFor(() => expect(runEvaluation).toBeEnabled());
     await user.click(runEvaluation);
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "The evaluation could not be completed. Retry when the API is available.",
+      "无法完成评测。请在 API 可用后重试。",
     );
-    expect(screen.getByRole("button", { name: "Run evaluation" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "运行评测" })).toBeEnabled();
   });
 
   it("renders a recoverable dashboard error when an overview request fails", async () => {
@@ -473,18 +473,18 @@ describe("App workflows", () => {
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { name: "Dashboard data could not be loaded" }),
+      await screen.findByRole("heading", { name: "无法加载控制台数据" }),
     ).toBeVisible();
     expect(screen.getAllByRole("alert")).toHaveLength(1);
     expect(screen.queryByText("offline secret")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Retry dashboard" }));
+    await user.click(screen.getByRole("button", { name: "重试加载" }));
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(6));
   });
 
   it("has no automatic axe violations in the loaded overview", async () => {
     vi.stubGlobal("fetch", overviewFetch({ runs: [runFixture()] }));
     const { container } = render(<App />);
-    await screen.findByRole("table", { name: "Recent runs" });
+    await screen.findByRole("table", { name: "最近运行" });
 
     const result = await axe.run(container);
     expect(result.violations).toEqual([]);
@@ -495,15 +495,15 @@ describe("App workflows", () => {
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { name: "Deterministic recovery evidence" }),
+      await screen.findByRole("heading", { name: "可复现的智能体恢复证据" }),
     ).toBeVisible();
-    expect(screen.getByRole("link", { name: "Run scenario" })).toBeVisible();
-    const rail = screen.getByRole("region", { name: "Reliability metrics" });
+    expect(screen.getByRole("link", { name: "运行场景" })).toBeVisible();
+    const rail = screen.getByRole("region", { name: "可靠性指标" });
     for (const label of [
-      "Resilient correctness",
-      "Recovery",
-      "Fragile correctness",
-      "Accepted invalid outputs",
+      "韧性模式正确率",
+      "故障恢复率",
+      "脆弱模式正确率",
+      "接受的无效输出",
     ]) {
       expect(within(rail).getByText(label)).toBeVisible();
     }
@@ -528,7 +528,7 @@ describe("App workflows", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const start = await screen.findByRole("button", { name: "Start run" });
+    const start = await screen.findByRole("button", { name: "启动运行" });
     start.focus();
     await user.keyboard("{Enter}");
     expect(await screen.findByRole("heading", { name: "timeout-recovery" })).toBeVisible();

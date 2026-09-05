@@ -1,92 +1,70 @@
-# Agent Reliability Lab
+# Agent Reliability Lab｜智能体可靠性实验室
 
-> A local-first, evidence-driven test bench for building tool-using agents that
-> retry safely, pause for human approval, survive reconstruction, and fail
-> closed when their reliability claims cannot be verified.
+> 面向工具型 AI Agent 的本地优先可靠性实验台：把重试、持久化恢复、人工审批、故障注入与可验证评测，做成可以运行、审计和回归的工程证据。
 
-[![CI](https://github.com/SCUliujiacheng/agent-reliability-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/SCUliujiacheng/agent-reliability-lab/actions/workflows/ci.yml)
+简体中文（当前仓库） | [English README](README_EN.md) | [英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)
+
+这是面向中文读者的独立公开版本，README、控制台与讲解文档以简体中文为主；原有英文版本继续在[英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)维护。
+
+[![CI](https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml/badge.svg)](https://github.com/SCUliujiacheng/agent-reliability-lab-zh/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Node 22.20+](https://img.shields.io/badge/node-22.20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0F766E.svg)](LICENSE)
 
-![Agent Reliability Lab dashboard](docs/screenshots/dashboard-overview.png)
+![Agent Reliability Lab 控制台](docs/screenshots/dashboard-overview.png)
 
-Most agent demos show a happy path. This repository makes failure behavior the
-main artifact: exact scenario contracts, a durable state machine, schema-first
-tools, ordered sanitized traces, human approval, reproducible fault injection,
-and a regression gate that reconstructs metrics from evidence instead of
-trusting a summary JSON file.
+## 30 秒看结果
 
-## Measured result
+同一套冻结的 6 个合成事故场景，在确定性 scripted policy 和本地 synthetic tools 下分别运行 `fragile` 与 `resilient` 两种模式；无需 API key、网络、GPU 或付费服务。
 
-The committed benchmark runs the same six frozen scenarios through both modes.
-It uses a deterministic scripted policy and synthetic local tools—no API key,
-network request, GPU, or paid service.
-
-| Exact metric | Fragile | Resilient | Change |
+| 精确指标 | 脆弱模式（fragile） | 韧性模式（resilient） | 变化 |
 | --- | ---: | ---: | ---: |
-| Task correctness | 4 / 6 (66.7%) | 6 / 6 (100.0%) | **+33.3 pp** |
-| Transient-fault recovery | 0 / 2 (0.0%) | 2 / 2 (100.0%) | **+100.0 pp** |
-| Tool-sequence accuracy | 94.4% | 100.0% | **+5.6 pp** |
-| Invalid outputs accepted | 0 | 0 | unchanged |
-| Unnecessary logical calls | 0 | 0 | unchanged |
+| 任务正确率 | 4 / 6 (66.7%) | 6 / 6 (100.0%) | **+33.3 个百分点** |
+| 瞬时故障恢复率 | 0 / 2 (0.0%) | 2 / 2 (100.0%) | **+100.0 个百分点** |
+| 工具序列准确率 | 94.4% | 100.0% | **+5.6 个百分点** |
+| 接受的无效输出 | 0 | 0 | 无变化 |
+| 非必要逻辑调用 | 0 | 0 | 无变化 |
 
-The contrast comes from a first-attempt timeout and rate limit. Resilient mode
-records the failure, retries within policy, and reaches the declared outcome;
-fragile mode stops after one attempt. Inspect the
-[machine-readable baseline](benchmarks/baseline-report.json),
-[benchmark results](docs/benchmark-results.md), and
-[gate/provenance contract](docs/data-and-scenario-provenance.md) for the exact
-denominators, grader definitions, reconstruction rules, and limitations.
+差异来自首次调用的超时（`timeout`）与限流（`rate_limit`）：韧性模式会记录失败、在策略边界内重试并到达声明结果；脆弱模式在第一次失败后终止。指标不是手填摘要，而是由有序轨迹、套件/操作/输出哈希与版本化场景重新构建。
 
-## What is implemented
+## 项目价值与我的工作
 
-- **Durable orchestration** — explicit run states, checkpoints, optimistic
-  version checks, execution leases, restart-safe resume, and terminal-state
-  enforcement. Externally visible run transitions and their audit events share
-  one SQLite transaction.
-- **Bounded agent execution** — each run permits at most 64 new policy calls by
-  default (configurable from 1 to 1024). Each slot is reserved durably before
-  invocation, while tool retries remain attempts within one logical action;
-  exhaustion is persisted and traced as `action_budget_exhausted` before
-  another policy call can occur.
-- **Schema-first tool boundary** — registered tools only, strict Pydantic input
-  and output validation, at most five attempts and 60 seconds per handler
-  attempt, deterministic fault injection, idempotency keys, and cached results.
-- **Approval bound to the reviewed action** — the API exposes a sanitized
-  pending-action descriptor with the action step, SHA-256 fingerprint, tool
-  name, and arguments. SQLite accepts a decision atomically only while that
-  exact action is current; exact duplicates converge and stale or conflicting
-  decisions fail closed.
-- **Auditable evaluation** — six versioned scenarios, exact graders, per-case
-  traces, suite/action/output hashes, evidence integrity checks, and a
-  baseline-aware CI gate.
-- **Operational surface** — FastAPI with bounded requests, exact trusted hosts,
-  and stable application-route errors; Typer CLI; React/TypeScript dashboard;
-  JSON trace export; containers; and CI.
-- **Privacy-aware telemetry** — trace payloads and tool results are recursively
-  sanitized before persistence, and the API publishes narrower DTOs. Durable
-  pending-action arguments stay exact for reconstruction and must not contain
-  credentials.
+多数 Agent 演示只展示正常路径（happy path）；这个项目把“失败后是否仍然可信”作为主要产物。我实现了从运行时、工具边界、证据存储到评测门禁的完整纵向切片：
 
-## Architecture
+- 用显式状态机、checkpoint、optimistic version check 与 execution lease 实现 restart-safe resume，并让运行状态变更与审计事件共享一次 SQLite 事务。
+- 用严格 Pydantic schema、tool registry、timeout、bounded retry、idempotency key 和确定性 fault injection 收紧工具调用边界。
+- 将人工审批绑定到当前 `action_step`、SHA-256 `action_fingerprint`、`tool_name` 与 `arguments`；重复决定幂等收敛，过期、伪造或冲突决定 fail closed。
+- 构建 FastAPI、Typer CLI、React + TypeScript 控制台、Docker Compose 与 GitHub Actions，让同一份证据可通过 UI、HTTP、CLI 和 CI 检查。
+- 建立 trace-derived graders 与 baseline-aware gate，区分产品回归、不可比报告和证据损坏。
 
-![Agent Reliability Lab architecture](docs/architecture/agent-reliability-lab-architecture.visual-check.1440x900.light.png)
+## 架构
 
-The browser/API path and CLI/evaluation path share the same deterministic runtime
-contracts. SQLite is the single-node coordination and evidence boundary; the
-versioned JSON baseline is a separate regression contract.
+![Agent Reliability Lab 架构](docs/architecture/agent-reliability-lab-architecture.visual-check.1440x900.light.png)
 
-Open the [interactive architecture](docs/architecture/agent-reliability-lab-architecture.html)
-for guided views, search, relationship tracing, light/dark themes, and export.
+浏览器/API 路径与 CLI/评测路径共享同一套确定性运行时契约。SQLite 是单节点协调与证据边界；版本化 JSON baseline 是独立的回归契约。
 
-## Credential-free quickstart
+打开[交互式架构图](docs/architecture/agent-reliability-lab-architecture.html)，可以切换视图、搜索组件、追踪关系并导出图像；设计证据与复现说明见[架构文档](docs/architecture/README.md)。
 
-Prerequisites: Python 3.12+, [uv](https://docs.astral.sh/uv/), and Node.js 22.20+.
+## 核心实现与取舍
+
+| 约束 | 实现 | 为什么这样取舍 |
+| --- | --- | --- |
+| Agent 可能失控循环 | 默认最多 64 次新 policy call，可配置范围 1–1024；每个槽位先持久化预留 | crash 后仍能正确计数；tool retry 仍属于一次 logical action |
+| 工具可能慢、坏或返回脏数据 | 每次 handler attempt 最多 60 秒、最多 5 次；输入/输出均严格校验 | 让失败可分类、可重放，避免无效结果进入状态机 |
+| 审批可能发生竞态 | 当前 action 身份与决定在 SQLite 中原子比较并写入 | exact duplicate 幂等；stale/conflicting decision 返回 HTTP 409 |
+| trace 可能泄露敏感值 | 持久化前递归清洗，API 仅发布更窄 DTO | 保留可审计性，同时缩小泄露面 |
+| benchmark 可能“自己证明自己” | gate 重算 summary，校验顺序语义、唯一性、hash 与 provenance | 被篡改或不可比的 artifact 作为 infrastructure failure，而非 PASS |
+| 模型服务不可控 | 默认 benchmark 不调用模型；另提供严格的 OpenAI-compatible `/chat/completions` adapter | 确定性 headline 与 provider quality 评测分离 |
+
+可选 provider adapter 对远程 URL 强制 HTTPS，关闭 redirect，默认 connect/read timeout 为 5/30 秒、总 deadline 为 45 秒，并在 streaming 阶段限制响应为 1 MiB（可验证上限 16 MiB）。它不提供 outbound allowlist 或 network sandbox，生产环境仍需单独限制 egress。
+
+## 3 分钟运行
+
+前置条件：Python 3.12+、[uv](https://docs.astral.sh/uv/) 与 Node.js 22.20+。
 
 ```bash
-git clone https://github.com/SCUliujiacheng/agent-reliability-lab.git
-cd agent-reliability-lab
+git clone https://github.com/SCUliujiacheng/agent-reliability-lab-zh.git
+cd agent-reliability-lab-zh
 
 uv sync --dev --locked
 npm ci --prefix web
@@ -98,25 +76,19 @@ uv run uvicorn agent_reliability_lab.api.app:create_app --factory --host 127.0.0
 npm --prefix web run dev
 ```
 
-Open `http://127.0.0.1:5173`, run an evaluation, then replay a scenario from the
-dashboard.
+打开 `http://127.0.0.1:5173`，运行评测，再从控制台复现一个场景。API 文档位于 `http://127.0.0.1:8000/docs`。
 
-### Docker Compose
+也可以直接启动非 root 容器与同源 `/v1` 代理：
 
 ```bash
 docker compose up --build
 ```
 
-The Compose stack runs both containers as non-root users, serves the dashboard
-and `/v1` through one origin, and keeps the SQLite database in a named volume.
+完整环境变量契约见 [`.env.example`](.env.example)。应用不会自动加载该文件；Compose 会显式声明自己的值。修改 `ARL_TRUSTED_HOSTS` 会替换 API allowlist，若同时修改 dashboard hostname，还需同步 `web/nginx.conf` 的 `server_name`。
 
-The complete process-environment reference is in [`.env.example`](.env.example).
-The application does not load that file automatically, and Compose declares its
-own values explicitly. `ARL_TRUSTED_HOSTS` replaces the API allowlist; changing
-the dashboard hostname also requires a matching `server_name` in
-`web/nginx.conf`.
+## 评测与失败分析
 
-## Reproduce the benchmark
+复现已提交的基准并执行回归门禁：
 
 ```bash
 uv run arl eval scenarios/incident-response \
@@ -128,18 +100,9 @@ uv run arl gate artifacts/current-report.json \
   --baseline benchmarks/baseline-report.json
 ```
 
-Expected gate output:
+预期输出为 `PASS`。精确分母、grader 定义、重建规则和限制见[基准结果](docs/benchmark-results.md)、[机器可读 baseline](benchmarks/baseline-report.json)与[数据及场景来源](docs/data-and-scenario-provenance.md)。
 
-```text
-PASS
-```
-
-The gate first validates report structure, suite identity, trace uniqueness,
-ordered event semantics, deterministic outputs, and recomputed summaries. A
-tampered or incomparable artifact is an infrastructure failure, not a passing
-score.
-
-## Inspect one failure-and-recovery trace
+单独检查一次 timeout 的失败—恢复链：
 
 ```bash
 uv run arl run scenarios/incident-response/timeout-recovery.yaml \
@@ -147,8 +110,6 @@ uv run arl run scenarios/incident-response/timeout-recovery.yaml \
   --database .arl-data/demo.db \
   --json
 ```
-
-The trace shows this evidence chain:
 
 ```text
 search_recent_logs attempt 1
@@ -160,9 +121,9 @@ search_recent_logs attempt 2
 run succeeded: diagnosed
 ```
 
-![Recovered timeout trace](docs/screenshots/trace-detail.png)
+![恢复后的 timeout 轨迹](docs/screenshots/trace-detail.png)
 
-Export a run after copying its `run_id` from the command output:
+复制命令输出中的 `run_id` 后导出原始证据：
 
 ```bash
 uv run arl export-trace <run-id> \
@@ -170,88 +131,7 @@ uv run arl export-trace <run-id> \
   --output artifacts/trace.json
 ```
 
-## HTTP workflow
-
-```bash
-# Discover the catalog
-curl http://127.0.0.1:8000/v1/scenarios
-
-# Start a durable approval scenario and keep its review descriptor
-RUN_JSON="$(curl -sS -X POST http://127.0.0.1:8000/v1/runs \
-  -H "content-type: application/json" \
-  -d '{"scenario_id":"approval-reconstruction","mode":"resilient"}')"
-RUN_ID="$(printf '%s' "$RUN_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
-ACTION_STEP="$(printf '%s' "$RUN_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)["pending_approval"]["action_step"])')"
-ACTION_FINGERPRINT="$(printf '%s' "$RUN_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)["pending_approval"]["action_fingerprint"])')"
-
-# Approve using the returned run ID and its current pending_approval descriptor
-curl -X POST "http://127.0.0.1:8000/v1/runs/$RUN_ID/approvals" \
-  -H "content-type: application/json" \
-  -d "{\"actor\":\"demo-reviewer\",\"allow\":true,\"action_step\":$ACTION_STEP,\"action_fingerprint\":\"$ACTION_FINGERPRINT\",\"reason\":\"trace verified\"}"
-
-curl "http://127.0.0.1:8000/v1/runs/$RUN_ID/trace?limit=100"
-
-# Run and list the same frozen evaluation used by the dashboard
-curl -X POST http://127.0.0.1:8000/v1/evaluations \
-  -H "content-type: application/json" \
-  -d '{"suite":"incident-response"}'
-
-curl "http://127.0.0.1:8000/v1/evaluations?limit=10"
-```
-
-Copy `action_step` and `action_fingerprint` from the run's current
-`pending_approval` descriptor without recomputing them. The server accepts the
-decision only while that exact action is pending. An exact duplicate converges
-idempotently; stale, forged, or conflicting decisions return HTTP 409. Pending
-arguments are recursively sanitized before review. `actor` is a caller-supplied
-label, not an authenticated identity.
-
-Evaluation creation completes synchronously with HTTP 201, persists the report
-in SQLite, and is limited to one concurrent request per API process (the
-default local deployment runs one process). Competing requests receive HTTP 409
-with `evaluation_in_progress`. The dashboard button calls this same public API
-and replaces the displayed report with the returned result.
-
-Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
-
-## Optional OpenAI-compatible policy boundary
-
-The exact benchmark intentionally does not call a model. A separate adapter can
-request one strict `AgentAction` from an OpenAI-compatible
-`/chat/completions` endpoint. Remote URLs must use HTTPS; plaintext HTTP is
-accepted only for `localhost` or loopback-IP development. Redirects are
-disabled. The default connect and read limits are 5 and 30 seconds, with a
-45-second overall HTTP request/read deadline. Responses are bounded while
-streaming to 1 MiB by default (validated maximum: 16 MiB). The adapter requests
-identity encoding and rejects encoded responses before reading their bodies, so
-decompression cannot occur ahead of the byte ceiling. The API key is loaded
-from the caller-selected environment variable, included in trace redaction, and
-rejected if a provider reflects it inside a returned action.
-
-```python
-from agent_reliability_lab.providers.openai_compatible import (
-    OpenAICompatibleConfig,
-    OpenAICompatiblePolicy,
-)
-
-policy = OpenAICompatiblePolicy(
-    OpenAICompatibleConfig(
-        base_url="https://provider.example/v1",
-        model="your-model",
-        api_key_env="PROVIDER_API_KEY",
-        total_timeout_seconds=45.0,
-        max_response_bytes=1_048_576,
-    )
-)
-```
-
-This adapter is a tested library boundary, not the default CLI policy. Provider
-quality needs a separate repeated, statistical evaluation; it is not presented
-as part of the deterministic headline result. The adapter does not provide an
-outbound destination allowlist or network sandbox; production deployments must
-restrict egress independently.
-
-## Verification
+## 工程质量
 
 ```bash
 uv sync --dev --locked
@@ -270,60 +150,47 @@ uv run arl eval scenarios/incident-response --output artifacts/final-report.json
 uv run arl gate artifacts/final-report.json --baseline benchmarks/baseline-report.json
 ```
 
-GitHub Actions runs independent Python, frontend, benchmark, and container jobs.
-The container job builds both images and exercises the Compose stack; the
-benchmark job enforces the committed evidence contract.
-
-## Repository map
+GitHub Actions 将 Python、frontend、benchmark 和 container 分成独立 jobs。container job 构建两个镜像并验证 Compose；benchmark job 强制执行已提交的 evidence contract。
 
 ```text
 src/agent_reliability_lab/
-  api/          FastAPI adapter and narrow response contracts
-  domain/       immutable actions, runs, and scenario models
-  evaluation/   exact graders, report provenance, and fail-closed gate
-  providers/    strict OpenAI-compatible policy adapter
-  runtime/      checkpointed orchestration and approval-aware services
-  storage/      SQLite transactions, CAS, leases, and durable evidence
-  telemetry/    ordered events and recursive redaction
-  tools/        registry, validation, retries, faults, and idempotency
-web/            React + TypeScript evidence dashboard
-scenarios/      frozen synthetic YAML suite
-benchmarks/     committed baseline report
-docs/           architecture, benchmark semantics, provenance, and interview guide
+  api/          FastAPI adapter 与精简 response contracts
+  domain/       immutable actions、runs 与 scenario models
+  evaluation/   exact graders、report provenance 与 fail-closed gate
+  providers/    严格的 OpenAI-compatible policy adapter
+  runtime/      checkpointed orchestration 与 approval-aware services
+  storage/      SQLite transactions、CAS、leases 与 durable evidence
+  telemetry/    ordered events 与 recursive redaction
+  tools/        registry、validation、retries、faults 与 idempotency
+web/            React + TypeScript 证据控制台
+scenarios/      冻结的 synthetic YAML suite
+benchmarks/     已提交的 baseline report
+docs/           架构、benchmark semantics、provenance 与面试指南
 ```
 
-## Deliberate limitations
+## 已知限制
 
-- The headline suite has six synthetic incident scenarios; it does not model
-  real-world incident diversity.
-- The default policy is scripted, so the benchmark measures orchestration and
-  tool-boundary reliability—not LLM reasoning quality.
-- SQLite and in-process execution target a local, single-node demonstration;
-  there are no database migrations or distributed workers.
-- The demo has no authentication, RBAC, tenant isolation, or secrets manager.
-- The generic `Policy` protocol does not impose a universal per-call deadline;
-  custom policies must bound their own I/O. The optional HTTP provider does have
-  a 45-second total deadline, and the action budget bounds call count, not call
-  duration.
-- Tool side effects are simulated. This is not a production incident executor.
+- headline suite 只有 6 个 synthetic incident scenarios，不能代表真实事故的全部多样性。
+- 默认 policy 是 scripted，因此 benchmark 测量的是 orchestration 与 tool-boundary reliability，而不是 LLM reasoning quality。
+- SQLite 与 in-process execution 面向本地单节点演示；没有 database migrations 或 distributed workers。
+- demo 没有 authentication、RBAC、tenant isolation 或 secrets manager。
+- 通用 `Policy` protocol 不强制统一的 per-call deadline；自定义 policy 必须约束自己的 I/O。可选 HTTP provider 有 45 秒总 deadline，但 action budget 只限制调用次数，不限制调用时长。
+- 工具副作用均为模拟，本项目不是生产事故执行器。
 
-These constraints keep the project runnable by a reviewer and make each claim
-precise. The next production-oriented steps would be PostgreSQL migrations,
-authenticated approvals, distributed leases/workers, OpenTelemetry export, and
-a separate statistically grounded provider evaluation track.
+下一阶段可以扩展 PostgreSQL migrations、authenticated approvals、distributed leases/workers、OpenTelemetry export，以及独立、重复、统计可信的 provider evaluation track。
 
-## Interview shortcuts
+## 面试指南
 
-- Why exact trace-derived graders instead of LLM-as-judge?
-- How do approval races converge across two application instances?
-- Where does idempotency stop, and what would change for an external side effect?
-- How does the gate distinguish a product regression from corrupted evidence?
-- Which contracts survive a move from SQLite to PostgreSQL and worker queues?
+建议用 5 分钟完成一次演示：先展示基准差异，再启动 `timeout-recovery`，最后沿 trace 解释 durable retry 和 fail-closed gate。可以重点讨论：
 
-Answers and a five-minute demo path are in the [interview guide](docs/interview-guide.md).
-Scenario origins and integrity fields are documented in
-[data and scenario provenance](docs/data-and-scenario-provenance.md).
+- 为什么使用 exact trace-derived graders，而不是 LLM-as-judge？
+- 两个应用实例同时审批时，竞态如何收敛？
+- idempotency 的边界在哪里？若工具产生真实外部副作用，应如何扩展？
+- gate 如何区分产品回归与损坏的 evidence artifact？
+- 从 SQLite 迁移到 PostgreSQL 与 worker queues 时，哪些契约可以保留？
 
-## License
+完整答案、可引用代码路径和演示顺序见[面试指南](docs/interview-guide.md)。
+
+## 许可证（License）
 
 [MIT](LICENSE)

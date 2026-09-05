@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { outcomeLabel } from "../presentation";
 import type { LoadState, RunMode, ScenarioSummary } from "../types";
 
 interface ScenarioLauncherProps {
@@ -24,18 +25,18 @@ export function ScenarioLauncher({
     : (scenarios[0]?.id ?? "");
 
   if (state === "loading") {
-    return <div className="state-panel" aria-live="polite">Loading scenario catalog…</div>;
+    return <div className="state-panel" aria-live="polite">正在加载场景目录…</div>;
   }
   if (state === "error") {
     return (
       <div className="state-panel" role="alert">
-        <strong>Scenarios unavailable</strong>
-        <button type="button" className="text-button" onClick={onRetry}>Try again</button>
+        <strong>场景不可用</strong>
+        <button type="button" className="text-button" onClick={onRetry}>重试</button>
       </div>
     );
   }
   if (scenarios.length === 0) {
-    return <div className="state-panel"><strong>No scenarios configured</strong></div>;
+    return <div className="state-panel"><strong>尚未配置场景</strong></div>;
   }
 
   const current = scenarios.find((scenario) => scenario.id === effectiveScenario) ?? scenarios[0];
@@ -48,7 +49,7 @@ export function ScenarioLauncher({
         onStart(effectiveScenario, mode);
       }}
     >
-      <label htmlFor="scenario-select">Scenario</label>
+      <label htmlFor="scenario-select">场景</label>
       <select
         id="scenario-select"
         value={effectiveScenario}
@@ -58,25 +59,25 @@ export function ScenarioLauncher({
         {scenarios.map((scenario) => <option key={scenario.id} value={scenario.id}>{scenario.id}</option>)}
       </select>
 
-      <label htmlFor="mode-select">Mode</label>
+      <label htmlFor="mode-select">模式</label>
       <select
         id="mode-select"
         value={mode}
         onChange={(event) => setMode(event.target.value as RunMode)}
         disabled={launching}
       >
-        <option value="resilient">Resilient</option>
-        <option value="fragile">Fragile</option>
+        <option value="resilient">韧性模式</option>
+        <option value="fragile">脆弱模式</option>
       </select>
 
       <dl className="launcher-facts">
-        <div><dt>Expected</dt><dd>{current.expected_outcome}</dd></div>
-        <div><dt>Faults</dt><dd>{current.faults.length}</dd></div>
-        <div><dt>Approval</dt><dd>{current.approval_required ? "Required" : "Not required"}</dd></div>
+        <div><dt>预期结果</dt><dd>{outcomeLabel(current.expected_outcome)}</dd></div>
+        <div><dt>注入故障</dt><dd>{current.faults.length}</dd></div>
+        <div><dt>审批</dt><dd>{current.approval_required ? "需要" : "不需要"}</dd></div>
       </dl>
 
       <button className="primary-button" type="submit" disabled={launching || effectiveScenario.length === 0}>
-        {launching ? "Starting…" : "Start run"}
+        {launching ? "正在启动…" : "启动运行"}
       </button>
     </form>
   );

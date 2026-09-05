@@ -1,61 +1,27 @@
-# Security policy
+# 安全策略
 
-## Supported versions
+## 支持版本
 
-Agent Reliability Lab is a portfolio and research demonstration. Security fixes
-are applied to the latest commit on `main`; older snapshots are not maintained
-as supported releases.
+Agent Reliability Lab 是一个作品集与研究演示项目。安全修复仅应用于 `main` 的最新提交；旧快照不作为受支持版本维护。
 
-## Reporting a vulnerability
+## 报告漏洞
 
-Please use GitHub's private vulnerability reporting flow:
+请使用 GitHub 私有漏洞报告流程：
 
 <https://github.com/SCUliujiacheng/agent-reliability-lab/security/advisories/new>
 
-Do not include credentials, access tokens, personal data, or production traces
-in a public issue. A useful report includes the affected revision, impact,
-minimal reproduction, and any suggested mitigation.
+请勿在公开议题（Issue）中包含凭证、访问 token、个人数据或生产追踪。有效的报告应包括受影响的修订号、影响、最小复现步骤及建议的缓解措施。
 
-## Scope and threat boundary
+## 适用范围与威胁边界
 
-The repository demonstrates local single-node agent orchestration. Inbound HTTP
-is local by default: Compose publishes both services only on loopback, FastAPI
-checks an exact Host allowlist, and Nginx rejects unknown virtual hosts. On the
-Compose path, Nginx adds `Content-Security-Policy: frame-ancestors 'none'` and
-`X-Frame-Options: DENY`; direct Vite or Uvicorn development does not add that
-header layer. Application request bodies on every HTTP method and list queries
-are bounded, and configured CORS origins are explicit.
+本仓库演示本地单节点智能体编排。入站 HTTP 默认仅限本机：Docker Compose 只在回环地址发布两个服务，FastAPI 检查精确 Host 允许列表，Nginx 拒绝未知虚拟主机。在 Docker Compose 路径中，Nginx 添加 `Content-Security-Policy: frame-ancestors 'none'` 和 `X-Frame-Options: DENY`；直接使用 Vite 或 Uvicorn 开发时不包含这一请求头层。所有 HTTP 方法的应用请求体和列表查询均有上限，允许的 CORS 来源也必须显式配置。
 
-Only registered, schema-validated tools can execute. Tool declarations reject
-non-finite or excessive retry and timing values (at most five attempts, 60
-seconds per handler attempt, and five seconds of initial backoff). Approval
-requests must echo the exact currently pending action step and fingerprint;
-SQLite verifies and records that binding atomically. Public pending-approval
-projections and trace payloads are recursively sanitized. The durable run row
-retains the original pending arguments so the exact action can be reconstructed;
-policies must therefore never place credentials in tool arguments. Actor names
-remain caller-provided labels rather than authenticated identities.
+只有经过注册和 schema 验证的工具可以执行。工具声明会拒绝非有限或过大的重试与计时值（最多尝试 5 次、每次处理器调用 60 秒、首次退避 5 秒）。审批请求必须回传当前等待动作的精确步骤和指纹；SQLite 会原子验证并记录这一绑定。公开的待审批投影和追踪载荷都会递归脱敏。持久化运行记录会保留原始待处理参数，以便重建精确动作；因此，策略绝不能在工具参数中放入凭证。操作者名称仍是调用方提供的标签，而非经过身份认证的身份。
 
-Every run also enforces a bounded policy-call budget (64 by default,
-configurable from 1 to 1024). A slot is reserved in durable state before each
-new policy invocation, so cancellation cannot reset the allowance; tool retries
-remain attempts inside one returned action. Approval reconstruction reuses the
-action selected before the pause rather than reserving twice. Before any call
-beyond the limit, the run fails durably with `action_budget_exhausted`.
+每次运行还会限制策略调用预算（默认为 64，可配置范围为 1 至 1024）。每次新策略调用前都会在持久化状态中预留一个名额，因此取消操作无法重置额度；工具重试仍属于同一返回动作内的多次尝试。审批重建会复用暂停前已选择的动作，不会再次预留。任何超出限制的调用发生前，运行都会以 `action_budget_exhausted` 持久化失败。
 
-The optional provider adapter requires HTTPS for non-loopback destinations,
-disables redirects, enforces connect/read/total deadlines, requests identity
-encoding, rejects encoded responses before body iteration, and applies a
-streamed response-size ceiling. The active API-key value is included in trace
-redaction, and any returned action containing that credential is rejected
-before it can reach orchestration or persistence. It is not an outbound
-destination allowlist or network sandbox.
-The generic `Policy` protocol does not add a universal deadline around custom
-implementations; custom policies must bound their own I/O. The action budget
-limits invocation count rather than the duration of one invocation.
+可选提供商适配器要求非回环目标使用 HTTPS、禁用重定向、实施连接/读取/总时限、请求 `identity` 编码、在遍历响应体前拒绝编码响应，并限制流式响应大小。当前 API-key 值会纳入追踪脱敏；如果返回动作包含该凭证，则会在进入编排或持久化前被拒绝。它并非出站目标允许列表，也不是网络沙箱。
 
-It does **not** provide authentication, authorization, tenant isolation, a
-secrets manager, hardened network policy, or a production incident-response
-control plane. Do not expose the demo API to an untrusted network or connect the
-simulated tools to production systems without adding those controls and
-performing a dedicated security review.
+通用 `Policy` 协议不会为自定义实现附加统一时限；自定义策略必须自行限制其 I/O。动作预算限制的是调用次数，而不是单次调用时长。
+
+本项目**不提供**身份认证、授权、租户隔离、秘密管理器、加固网络策略或生产事件响应控制平面。在补齐上述控制并完成专项安全审查前，请勿将演示 API 暴露给不可信网络，也不要将模拟工具接入生产系统。

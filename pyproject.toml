@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "agent-reliability-lab"
 version = "0.1.0"
-description = "A local-first platform for evaluating tool-using agent reliability."
+description = "一个用于评测工具调用型智能体可靠性的本地优先平台。"
 requires-python = ">=3.12"
 dependencies = [
   "anyio==4.10.0",

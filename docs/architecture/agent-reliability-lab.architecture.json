@@ -2,8 +2,8 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Agent Reliability Lab",
-    "locale": "en",
+    "title": "Agent Reliability Lab｜可靠性工程架构",
+    "locale": "zh-CN",
     "output": "agent-reliability-lab-architecture.html",
     "quality_profile": "showcase",
     "repository": {
@@ -13,21 +13,21 @@
     "views": [
       {
         "id": "interactive-run",
-        "label": "Interactive run",
+        "label": "交互式运行",
         "focus": ["operator", "dashboard", "api", "runtime", "scenario-tools", "sqlite"],
-        "note": "Launch a run, bind approval to the reviewed action, and inspect its durable trace."
+        "note": "启动一次运行，将审批绑定到已审核操作，并检查其持久化轨迹。"
       },
       {
         "id": "evaluation-gate",
-        "label": "Evaluation gate",
+        "label": "评测门禁",
         "focus": ["operator", "dashboard", "api", "evaluator", "runtime", "scenario-tools", "sqlite", "baseline"],
-        "note": "Run paired evaluation from UI or CI, persist evidence, and gate it against a versioned baseline."
+        "note": "从 UI 或 CI 运行双模式评测，持久化证据，并与版本化基线对比执行门禁。"
       },
       {
         "id": "provider-path",
-        "label": "Optional provider path",
+        "label": "可选 Provider 路径",
         "focus": ["runtime", "provider-adapter", "provider-endpoint"],
-        "note": "Use bounded HTTPS requests for an optional OpenAI-compatible policy outside the local trust boundary."
+        "note": "在本地信任边界之外，以有界 HTTPS 请求调用可选的 OpenAI-compatible policy。"
       }
     ]
   },
@@ -35,17 +35,17 @@
     {
       "id": "operator",
       "type": "external",
-      "label": "Engineer",
-      "sublabel": "Browser",
+      "label": "工程师",
+      "sublabel": "浏览器",
       "pos": [30, 235],
       "size": [130, 66]
     },
     {
       "id": "dashboard",
       "type": "frontend",
-      "label": "Evidence Dashboard",
+      "label": "证据控制台",
       "sublabel": "React + Vite",
-      "tag": "runs + evals + approvals",
+      "tag": "运行 + 评测 + 审批",
       "sources": [
         {"path": "web/src/App.tsx", "label": "dashboard shell"},
         {"path": "web/src/components/TraceWaterfall.tsx", "label": "trace evidence"}
@@ -56,9 +56,9 @@
     {
       "id": "api",
       "type": "backend",
-      "label": "Reliability API",
+      "label": "可靠性 API",
       "sublabel": "FastAPI /v1",
-      "tag": "trusted hosts + 64 KiB",
+      "tag": "可信 Host + 64 KiB",
       "sources": [
         {"path": "src/agent_reliability_lab/api/app.py", "label": "HTTP entrypoint"},
         {"path": "src/agent_reliability_lab/api/services.py", "label": "API service boundary"}
@@ -69,9 +69,9 @@
     {
       "id": "runtime",
       "type": "backend",
-      "label": "Agent Runtime",
-      "sublabel": "durable state machine",
-      "tag": "64 policy calls + retries",
+      "label": "智能体运行时",
+      "sublabel": "持久化状态机",
+      "tag": "64 次 policy call + 重试",
       "sources": [
         {"path": "src/agent_reliability_lab/runtime/orchestrator.py", "label": "orchestrator"},
         {"path": "src/agent_reliability_lab/runtime/service.py", "label": "durable run service"}
@@ -82,9 +82,9 @@
     {
       "id": "sqlite",
       "type": "database",
-      "label": "SQLite Evidence Store",
-      "sublabel": "runs, events, approvals",
-      "tag": "CAS + approval binding",
+      "label": "SQLite 证据存储",
+      "sublabel": "运行、事件、审批",
+      "tag": "CAS + 审批绑定",
       "sources": [
         {"path": "src/agent_reliability_lab/storage/store.py", "label": "SQLite store"},
         {"path": "src/agent_reliability_lab/storage/models.py", "label": "persistence schema"}
@@ -95,9 +95,9 @@
     {
       "id": "scenario-tools",
       "type": "backend",
-      "label": "Scenario + Tool Lab",
-      "sublabel": "deterministic faults",
-      "tag": "6 scenarios",
+      "label": "场景与工具实验室",
+      "sublabel": "确定性故障",
+      "tag": "6 个场景",
       "sources": [
         {"path": "src/agent_reliability_lab/tools/gateway.py", "label": "tool gateway"},
         {"path": "src/agent_reliability_lab/tools/faults.py", "label": "fault injector"},
@@ -109,9 +109,9 @@
     {
       "id": "provider-adapter",
       "type": "backend",
-      "label": "Provider Adapter",
+      "label": "Provider 适配器",
       "sublabel": "OpenAI-compatible httpx",
-      "tag": "bytes + deadline",
+      "tag": "字节上限 + deadline",
       "sources": [
         {"path": "src/agent_reliability_lab/providers/openai_compatible.py", "label": "bounded provider adapter"}
       ],
@@ -121,9 +121,9 @@
     {
       "id": "provider-endpoint",
       "type": "external",
-      "label": "Provider Endpoint",
+      "label": "Provider 端点",
       "sublabel": "Chat Completions API",
-      "tag": "off-loopback HTTPS",
+      "tag": "非 loopback 强制 HTTPS",
       "pos": [1170, 85],
       "size": [180, 72]
     },
@@ -131,7 +131,7 @@
       "id": "cli",
       "type": "external",
       "label": "CLI / CI",
-      "sublabel": "evaluate + gate",
+      "sublabel": "评测 + 门禁",
       "sources": [
         {"path": "src/agent_reliability_lab/cli.py", "label": "CLI entrypoint"},
         {"path": ".github/workflows/ci.yml", "label": "release gates"}
@@ -142,9 +142,9 @@
     {
       "id": "evaluator",
       "type": "backend",
-      "label": "Evaluation Engine",
-      "sublabel": "paired-mode metrics",
-      "tag": "claims + provenance",
+      "label": "评测引擎",
+      "sublabel": "双模式指标",
+      "tag": "声明 + provenance",
       "sources": [
         {"path": "src/agent_reliability_lab/evaluation/runner.py", "label": "evaluation runner"},
         {"path": "src/agent_reliability_lab/evaluation/gate.py", "label": "fail-closed gate"}
@@ -155,9 +155,9 @@
     {
       "id": "baseline",
       "type": "database",
-      "label": "Versioned Baseline",
-      "sublabel": "JSON evidence artifact",
-      "tag": "regression contract",
+      "label": "版本化基线",
+      "sublabel": "JSON 证据制品",
+      "tag": "回归契约",
       "sources": [
         {"path": "benchmarks/baseline-report.json", "label": "versioned evidence"}
       ],
@@ -168,7 +168,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "Local demo trust boundary",
+      "label": "本地演示信任边界",
       "wraps": ["dashboard", "api", "runtime", "sqlite", "scenario-tools", "provider-adapter", "evaluator", "baseline"],
       "pad": 24
     }
@@ -178,7 +178,7 @@
       "id": "operator-dashboard",
       "from": "operator",
       "to": "dashboard",
-      "label": "inspect + approve",
+      "label": "检查 + 审批",
       "labelDy": -27,
       "variant": "emphasis"
     },
@@ -193,14 +193,14 @@
       "id": "api-runtime",
       "from": "api",
       "to": "runtime",
-      "label": "launch / resume",
+      "label": "启动 / 恢复",
       "variant": "emphasis"
     },
     {
       "id": "api-evaluator",
       "from": "api",
       "to": "evaluator",
-      "label": "run evaluation",
+      "label": "运行评测",
       "fromSide": "bottom",
       "toSide": "top",
       "labelAt": [531, 321],
@@ -210,7 +210,7 @@
       "id": "runtime-store",
       "from": "runtime",
       "to": "sqlite",
-      "label": "atomic state + trace",
+      "label": "原子状态 + 轨迹",
       "labelAt": [889, 321],
       "variant": "emphasis"
     },
@@ -218,13 +218,13 @@
       "id": "runtime-tools",
       "from": "runtime",
       "to": "scenario-tools",
-      "label": "validated tool calls"
+      "label": "校验后的工具调用"
     },
     {
       "id": "runtime-provider-adapter",
       "from": "runtime",
       "to": "provider-adapter",
-      "label": "optional policy",
+      "label": "可选 policy",
       "variant": "dashed"
     },
     {
@@ -239,7 +239,7 @@
       "id": "cli-evaluator",
       "from": "cli",
       "to": "evaluator",
-      "label": "evaluate / gate",
+      "label": "评测 / 门禁",
       "labelAt": [415, 516],
       "variant": "emphasis"
     },
@@ -247,14 +247,14 @@
       "id": "evaluator-runtime",
       "from": "evaluator",
       "to": "runtime",
-      "label": "fragile + resilient runs",
+      "label": "fragile + resilient 运行",
       "labelAt": [657, 340]
     },
     {
       "id": "evaluator-baseline",
       "from": "evaluator",
       "to": "baseline",
-      "label": "compare claims",
+      "label": "对比声明",
       "labelAt": [780, 516],
       "variant": "dashed"
     },
@@ -262,7 +262,7 @@
       "id": "evaluator-store",
       "from": "evaluator",
       "to": "sqlite",
-      "label": "persist reports",
+      "label": "持久化报告",
       "fromSide": "top",
       "toSide": "bottom",
       "variant": "dashed"
@@ -271,26 +271,26 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "Observable by design",
+      "title": "可观测性内建",
       "items": [
-        "Every transition is a sequence-ordered trace event",
-        "Approvals are atomically bound to the reviewed action fingerprint"
+        "每次状态转换都是按 sequence 排序的轨迹事件",
+        "审批以原子方式绑定到已审核操作的 fingerprint"
       ]
     },
     {
       "dot": "emerald",
-      "title": "Measurable reliability",
+      "title": "可靠性可度量",
       "items": [
-        "The same deterministic faults exercise both execution modes",
-        "A versioned baseline turns benchmark claims into a CI gate"
+        "同一组确定性故障同时检验两种执行模式",
+        "版本化 baseline 将 benchmark 声明转化为 CI 门禁"
       ]
     },
     {
       "dot": "amber",
-      "title": "Deliberate scope",
+      "title": "明确的范围边界",
       "items": [
-        "Single-process API and SQLite are demonstration boundaries",
-        "The optional provider endpoint is external and requires HTTPS off-loopback"
+        "单进程 API 与 SQLite 是演示边界",
+        "可选 Provider 端点位于外部，非 loopback 地址必须使用 HTTPS"
       ]
     }
   ]
