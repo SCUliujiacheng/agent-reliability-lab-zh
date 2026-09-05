@@ -8,13 +8,14 @@
 
 - diagram type：`architecture`
 - quality profile：`showcase`
-- repository evidence：在 revision `727f9614b60ddfd41adc1a7cb38e4c5c360ab3c3` 验证了 `17` 个引用
-- specification SHA-256：`194b314e03049de183cecd4760ebf3d2dc77c064a0089bb9401d534bf747d25c`
-- HTML SHA-256：`5468381d8d3bdeb520e7412c5a6b19877e12221140b03db3d4a0e4f6a7f97438`
-- specification bytes：`8,731`
-- HTML bytes：`725,243`
+- repository evidence：在实现提交 `61682da932ab3f55596a22747cf6d64c90ae106e` 验证了 `17` 个引用
+- specification SHA-256：`e637ff2b3915a643e7db652f09c5036aea68d56991b6e6f85723a9eca06a388b`
+- HTML SHA-256：`550e7a6028396216682fa96936a4cb15db76f51f307c7430eaf1d166e73fb9cf`
+- specification bytes：`8,734`
+- HTML bytes：`725,297`
 - structural checks：`9 / 9`
 - composition：`0` errors，`0` warnings
+- correction rounds：`0`
 
 ## 视觉检查
 
