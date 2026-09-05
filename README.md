@@ -213,7 +213,7 @@ docs/           架构、benchmark semantics、provenance 与技术导览
 - gate 如何区分产品回归与损坏的 evidence artifact？
 - 从 SQLite 迁移到 PostgreSQL 与 worker queues 时，哪些契约可以保留？
 
-完整设计说明、对应代码路径和操作顺序见[技术设计导览](docs/technical-tour.md)。
+完整设计说明与操作顺序见[技术设计导览](docs/technical-tour.md)。
 
 ## 许可证（License）
 
