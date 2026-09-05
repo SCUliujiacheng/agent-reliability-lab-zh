@@ -1,4 +1,4 @@
-"""Thin command-line adapter for runs, evaluations, gates, and trace export."""
+"""运行场景、评测、门禁和轨迹导出的命令行入口。"""
 
 import asyncio
 import json
@@ -33,16 +33,16 @@ def run_command(
     database: Annotated[Path, typer.Option()] = Path(".arl-data/runs.db"),
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Run one frozen scenario through the durable runtime."""
+    """通过持久化运行时执行一个冻结场景。"""
     try:
         if mode not in {"fragile", "resilient"}:
-            raise ValueError("mode must be fragile or resilient")
+            raise ValueError("mode 必须是 fragile 或 resilient")
         scenario = load_scenario(scenario_path)
         service = _persistent_service(database, scenario)
         run = asyncio.run(service.start(scenario.id, mode))  # type: ignore[arg-type]
         if run.pending_approval and scenario.approval_supplied:
             if run.pending_action_fingerprint is None:
-                raise RuntimeError("waiting run has no approval fingerprint")
+                raise RuntimeError("等待审批的运行缺少动作指纹")
             service = _persistent_service(database, scenario)
             run = asyncio.run(
                 service.approve(
@@ -77,7 +77,7 @@ def eval_command(
     baseline_output: Annotated[Path | None, typer.Option()] = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Evaluate the same frozen suite in fragile and resilient modes."""
+    """分别以 fragile 和 resilient 模式评测同一冻结套件。"""
     try:
         report = asyncio.run(run_evaluation(suite))
         if output is not None:
@@ -99,7 +99,7 @@ def compare_command(
     report_path: Annotated[Path, typer.Argument()],
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Display resilient-minus-fragile metrics from one strict report."""
+    """显示 resilient 相对 fragile 的指标差异。"""
     try:
         comparison = compare_modes(_read_report(report_path))
         _emit(
@@ -150,7 +150,7 @@ def export_trace_command(
         store = _store(database)
         run = store.get_run(UUID(run_id))
         if run is None:
-            raise ValueError("run not found")
+            raise ValueError("未找到运行记录")
         payload = {
             "run_id": str(run.id),
             "trace_id": str(run.trace_id),
@@ -161,7 +161,7 @@ def export_trace_command(
         }
         if output is not None:
             _write_json(output, payload)
-        _emit(payload, json_output, f"exported {len(payload['events'])} events")
+        _emit(payload, json_output, f"已导出 {len(payload['events'])} 个事件")
     except Exception as error:  # noqa: BLE001 - CLI translates domain/I/O errors.
         _fail(error, json_output)
 
@@ -191,11 +191,11 @@ def _read_report(path: Path) -> EvaluationReport:
         )
         return EvaluationReport.model_validate(payload)
     except (OSError, json.JSONDecodeError, ValidationError, ValueError) as error:
-        raise ValueError(f"invalid evaluation report: {path}") from error
+        raise ValueError(f"评测报告无效：{path}") from error
 
 
 def _raise_non_finite(value: str) -> NoReturn:
-    raise ValueError(f"non-finite JSON value: {value}")
+    raise ValueError(f"JSON 中出现非有限数值：{value}")
 
 
 def _write_report(path: Path, report: EvaluationReport) -> None:
@@ -243,12 +243,12 @@ def _fail(error: Exception, json_output: bool) -> NoReturn:
     if json_output:
         _emit(payload, True, "")
     else:
-        typer.echo(f"error: {error}", err=True)
+        typer.echo(f"错误：{error}", err=True)
     raise typer.Exit(2)
 
 
 def _evaluation_table(report: EvaluationReport) -> str:
-    lines = ["mode      correctness  recovery  invalid accepted"]
+    lines = ["模式      正确率       恢复率      接受的无效输出"]
     for mode, result in report.modes.items():
         metrics = result.metrics
         recovery = (

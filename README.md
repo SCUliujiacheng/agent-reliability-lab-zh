@@ -33,7 +33,7 @@
 
 ## 30 秒看结果
 
-同一套冻结的 6 个合成事故场景，在确定性 scripted policy 和本地 synthetic tools 下分别运行 `fragile` 与 `resilient` 两种模式；无需 API key、网络、GPU 或付费服务。
+同一套冻结的 6 个合成事故场景，分别在确定性脚本策略和本地模拟工具下运行 `fragile` 与 `resilient` 两种模式；全程不需要 API key、网络、GPU 或付费服务。
 
 | 精确指标 | 脆弱模式（fragile） | 韧性模式（resilient） | 变化 |
 | --- | ---: | ---: | ---: |
@@ -49,28 +49,28 @@
 
 最后落到三个部分：
 
-- 运行恢复：显式状态、checkpoint、optimistic version check 和 execution lease 负责从中断处继续；状态变化与对应事件写在同一个 SQLite 事务里。
-- 工具与审批：Pydantic schema、timeout、bounded retry 和 idempotency key 约束工具调用；审批还要带回当前动作的 step 和 SHA-256 fingerprint。
-- 评测与查看：grader 从 trace 重算指标，gate 再和 baseline 对比。同一份结果可以从 FastAPI、Typer CLI 或 React 页面查看。
+- 运行恢复：显式状态、检查点（checkpoint）、乐观版本检查和执行租约负责从中断处继续；状态变化与对应事件写在同一个 SQLite 事务里。
+- 工具与审批：Pydantic 数据模式、超时、有界重试和幂等键约束工具调用；审批还要带回当前动作的步骤和 SHA-256 指纹。
+- 评测与查看：评分器从轨迹重算指标，门禁再和基线对比。同一份结果可以从 FastAPI、Typer CLI 或 React 页面查看。
 
 ## 架构
 
-![Agent Reliability Lab 架构](docs/architecture/agent-reliability-lab-architecture.visual-check.1440x900.light.png)
+![Agent Reliability Lab 架构](docs/architecture/agent-reliability-lab-architecture.png)
 
 浏览器/API 路径与 CLI/评测路径共享同一套确定性运行时契约。SQLite 是单节点协调与证据边界；版本化 JSON baseline 是独立的回归契约。
 
-打开[交互式架构图](docs/architecture/agent-reliability-lab-architecture.html)，可以切换视图、搜索组件、追踪关系并导出图像；设计证据与复现说明见[架构文档](docs/architecture/README.md)。
+打开[交互式架构图](docs/architecture/agent-reliability-lab-architecture.html)，可以切换视图、搜索组件、追踪关系并导出图像；生成方法见[架构文档](docs/architecture/README.md)。
 
 ## 关键边界与取舍
 
 | 约束 | 实现 | 为什么这样取舍 |
 | --- | --- | --- |
-| Agent 可能失控循环 | 默认最多 64 次新 policy call，可配置范围 1–1024；每个槽位先持久化预留 | crash 后仍能正确计数；tool retry 仍属于一次 logical action |
-| 工具可能慢、坏或返回脏数据 | 每次 handler attempt 最多 60 秒、最多 5 次；输入/输出均严格校验 | timeout、schema error 等失败会被分开记录，无效结果不会进入状态机 |
-| 审批可能发生竞态 | 当前 action 身份与决定在 SQLite 中原子比较并写入 | exact duplicate 幂等；stale/conflicting decision 返回 HTTP 409 |
-| trace 可能泄露敏感值 | 持久化前递归清洗，API 只返回更窄的 DTO | 页面不需要拿到存储层的完整 payload |
-| 只看 summary 容易漏掉被改过的 trace | gate 重算 summary，校验顺序语义、唯一性、hash 与 provenance | 对不上时返回 infrastructure failure，不给 `PASS` |
-| 模型服务不可控 | 默认 benchmark 不调用模型；另提供严格的 OpenAI-compatible `/chat/completions` adapter | 确定性 headline 与 provider quality 评测分离 |
+| Agent 可能失控循环 | 默认最多 64 次新策略调用，可配置范围 1–1024；每个名额先持久化预留 | 进程中断后仍能正确计数；工具重试仍属于一次逻辑动作 |
+| 工具可能慢、坏或返回脏数据 | 每次工具处理最多 60 秒、最多 5 次；输入/输出均严格校验 | 超时、数据校验错误等失败会被分开记录，无效结果不会进入状态机 |
+| 审批可能发生竞态 | 当前动作与决定在 SQLite 中原子比较并写入 | 完全相同的决定幂等；过期或冲突决定返回 HTTP 409 |
+| 轨迹可能泄露敏感值 | 持久化前递归清洗，API 只返回更窄的 DTO | 页面不需要拿到存储层的完整载荷 |
+| 只看摘要容易漏掉被改过的轨迹 | 门禁重算摘要，校验顺序、唯一性、哈希与来源信息 | 对不上时返回基础设施错误，不给 `PASS` |
+| 模型服务不可控 | 默认基准不调用模型；另提供受严格约束的 OpenAI 兼容适配器 | 将可复现的核心结果与真实模型质量评测分开 |
 
 可选 provider adapter 对远程 URL 强制 HTTPS，关闭 redirect，默认 connect/read timeout 为 5/30 秒、总 deadline 为 45 秒，并在 streaming 阶段限制响应为 1 MiB（可验证上限 16 MiB）。它不提供 outbound allowlist 或 network sandbox，生产环境仍需单独限制 egress。
 
@@ -185,33 +185,25 @@ src/agent_reliability_lab/
   telemetry/    ordered events 与 recursive redaction
   tools/        registry、validation、retries、faults 与 idempotency
 web/            React + TypeScript 证据控制台
-scenarios/      冻结的 synthetic YAML suite
-benchmarks/     已提交的 baseline report
-docs/           架构、benchmark semantics、provenance 与技术导览
+scenarios/      冻结的合成场景 YAML
+benchmarks/     已提交的基线报告
+docs/           架构、基准语义、来源说明与技术导览
 ```
 
 ## 这个项目不能证明什么
 
-- headline suite 只有 6 个 synthetic incident scenarios，不能代表真实事故的全部多样性。
-- 默认 policy 是 scripted，因此 benchmark 测量的是 orchestration 与 tool-boundary reliability，而不是 LLM reasoning quality。
-- SQLite 与 in-process execution 面向本地单节点演示；没有 database migrations 或 distributed workers。
-- demo 没有 authentication、RBAC、tenant isolation 或 secrets manager。
-- 通用 `Policy` protocol 不强制统一的 per-call deadline；自定义 policy 必须约束自己的 I/O。可选 HTTP provider 有 45 秒总 deadline，但 action budget 只限制调用次数，不限制调用时长。
+- 固定套件只有 6 个合成事故场景，不能代表真实事故的全部多样性。
+- 默认策略是脚本化的，因此基准测量的是编排与工具边界可靠性，而不是 LLM 推理质量。
+- SQLite 与进程内执行面向本地单节点演示；没有数据库迁移或分布式工作进程。
+- 演示没有身份认证、RBAC、租户隔离或秘密管理器。
+- 通用 `Policy` 协议不强制统一的单次调用时限；自定义策略必须约束自己的 I/O。可选 HTTP 提供商有 45 秒总时限，但动作预算只限制调用次数，不限制调用时长。
 - 工具副作用均为模拟，本项目不是生产事故执行器。
 
-我暂时没有把 PostgreSQL migrations、带身份的审批、distributed workers、OpenTelemetry export 和真实 provider 的重复评测做进来。它们需要另一套实验，当前这 6 个场景的数字不能直接外推过去。
+我暂时没有把 PostgreSQL 迁移、带身份的审批、分布式工作进程、OpenTelemetry 导出和真实模型服务的重复评测做进来。它们需要另一套实验，当前这 6 个场景的数字不能直接外推过去。
 
-## 五分钟技术导览
+## 顺着一次运行看完整链路
 
-最短的验证路线是：先看基准差异，再启动 `timeout-recovery`，最后沿 trace 看 retry 与 gate。它会带出几个值得追问的问题：
-
-- 为什么使用 exact trace-derived graders，而不是 LLM-as-judge？
-- 两个应用实例同时审批时，竞态如何收敛？
-- idempotency 的边界在哪里？若工具产生真实外部副作用，应如何扩展？
-- gate 如何区分产品回归与损坏的 evidence artifact？
-- 从 SQLite 迁移到 PostgreSQL 与 worker queues 时，哪些契约可以保留？
-
-完整设计说明与操作顺序见[技术设计导览](docs/technical-tour.md)。
+运行 `timeout-recovery`，打开它的轨迹，再把报告与已提交的基线比较。[技术设计导览](docs/technical-tour.md)继续拆解评分、审批竞态、幂等边界、证据损坏检查，以及存储和工作进程的扩展方向。
 
 ## 许可证（License）
 

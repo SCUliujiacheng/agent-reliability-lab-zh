@@ -65,7 +65,7 @@ export function Overview({
           <div>
             <p className="eyebrow">API 不可用</p>
             <h2>无法加载控制台数据</h2>
-            <p>请检查本地 API 后重试。控制台没有展示任何不完整的响应数据。</p>
+            <p>请确认本地 API 正在运行，然后重试。</p>
           </div>
           <button type="button" className="primary-button" onClick={onRetry}>重试加载</button>
         </section>

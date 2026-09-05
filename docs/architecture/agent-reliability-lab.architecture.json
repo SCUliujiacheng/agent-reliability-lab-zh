@@ -271,26 +271,26 @@
   "cards": [
     {
       "dot": "cyan",
-      "title": "可观测性内建",
+      "title": "我重点检查的记录",
       "items": [
-        "每次状态转换都是按 sequence 排序的轨迹事件",
-        "审批以原子方式绑定到已审核操作的 fingerprint"
+        "每次状态转换都按序写入轨迹",
+        "审批与当前动作指纹在同一事务中核对"
       ]
     },
     {
       "dot": "emerald",
-      "title": "可靠性可度量",
+      "title": "两种模式怎么比较",
       "items": [
         "同一组确定性故障同时检验两种执行模式",
-        "版本化 baseline 将 benchmark 声明转化为 CI 门禁"
+        "版本化基线由 CI 门禁重新核对"
       ]
     },
     {
       "dot": "amber",
-      "title": "明确的范围边界",
+      "title": "目前没覆盖什么",
       "items": [
         "单进程 API 与 SQLite 是演示边界",
-        "可选 Provider 端点位于外部，非 loopback 地址必须使用 HTTPS"
+        "可选模型端点位于外部，非本机地址必须使用 HTTPS"
       ]
     }
   ]
