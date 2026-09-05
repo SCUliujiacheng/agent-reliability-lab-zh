@@ -1,33 +1,23 @@
-# 架构制品验证
+# 架构图怎么来的
 
-架构图由 `agent-reliability-lab.architecture.json` 生成，是一个自包含、可交互的 HTML 制品。
+这张图由 `agent-reliability-lab.architecture.json` 生成，产物是一个不依赖
+外部运行时的交互式 HTML。中文仓库对应这份说明；英文仓库保留自己的图和说明。
 
-本制品对应[中文独立仓库](https://github.com/SCUliujiacheng/agent-reliability-lab-zh)；英文版本与英文架构说明继续保留在[英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)。
+JSON 负责组件、关系和说明卡，生成的 HTML 提供主题切换、pan/zoom、搜索、
+guided views、关系追踪和离线导出。`agent-reliability-lab-architecture.visual-check.html`
+把四张检查截图拼在一起，方便快速查看；需要交互时请直接打开主 HTML。
 
-## 交付回执
+## 我检查了什么
 
-- diagram type：`architecture`
-- quality profile：`showcase`
-- repository evidence：在实现提交 `61682da932ab3f55596a22747cf6d64c90ae106e` 验证了 `17` 个引用
-- specification SHA-256：`e637ff2b3915a643e7db652f09c5036aea68d56991b6e6f85723a9eca06a388b`
-- HTML SHA-256：`550e7a6028396216682fa96936a4cb15db76f51f307c7430eaf1d166e73fb9cf`
-- specification bytes：`8,734`
-- HTML bytes：`725,297`
-- structural checks：`9 / 9`
-- composition：`0` errors，`0` warnings
-- correction rounds：`0`
+生成时验证了 JSON 中的 17 个仓库引用，并跑过 9 / 9 项结构检查；组成检查为
+0 errors、0 warnings。当前规格 SHA-256 是
+`e637ff2b3915a643e7db652f09c5036aea68d56991b6e6f85723a9eca06a388b`，HTML
+SHA-256 是 `550e7a6028396216682fa96936a4cb15db76f51f307c7430eaf1d166e73fb9cf`。
 
-## 视觉检查
+我还在 1440 × 900、1600 × 1000、1920 × 1080 与 2048 × 1320 检查了 containment
+和可读性。每个视口都没有横向或纵向 document overflow，最小投影节点文字高于
+6 px 的检查下限。1440 × 900 和 2048 × 1320 的浅色、深色截图也人工看过：中文
+节点、关系标签和三张说明卡没有被裁切，也没有发现路线碰撞或难以判断的 corridor。
 
-以下视口的 containment 与 readability 检查均通过：
-
-- 1440 × 900
-- 1600 × 1000
-- 1920 × 1080
-- 2048 × 1320
-
-所有视口的横向、纵向文档 overflow 均为零，最小投影节点文字高于 6 px 校验下限。自动回执仍保留 `visualReview: "pending"`：它只记录 containment，不代替主观视觉判断。
-
-已人工检查 1440 × 900 与 2048 × 1320 的浅色、深色截图；中文节点、关系标签与三张说明卡均无裁切，未发现路线碰撞或含混 corridor，因此人工视觉检查通过，无需修正轮次。
-
-`agent-reliability-lab-architecture.visual-check.html` 是四张检查截图的本地 contact sheet。主 HTML 仍是更完整的交付制品，支持主题切换、pan/zoom、搜索、guided views、关系追踪与离线导出。
+`visualReview: "pending"` 仍保留在自动结果中，因为它只表示机器检查过边界，
+不是对视觉质量的替代判断。

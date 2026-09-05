@@ -117,7 +117,7 @@ def gate_command(
     baseline: Annotated[Path | None, typer.Option()] = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Enforce exact reliability and optional baseline regression thresholds."""
+    """检查报告，并可选地与已提交 baseline 对比。"""
     try:
         result = enforce_gate(
             _read_report(report_path),
@@ -145,7 +145,7 @@ def export_trace_command(
     output: Annotated[Path | None, typer.Option()] = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Export ordered sanitized trace events for one persisted run."""
+    """导出一条已保存运行的有序、脱敏 trace JSON。"""
     try:
         store = _store(database)
         run = store.get_run(UUID(run_id))

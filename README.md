@@ -13,7 +13,7 @@
   <a href="#30-秒看结果">结果</a> ·
   <a href="#我为什么做这个项目">动机</a> ·
   <a href="#架构">架构</a> ·
-  <a href="#3-分钟运行">运行</a> ·
+  <a href="#在本地跑起来">运行</a> ·
   <a href="#评测与失败分析">评测证据</a> ·
   <a href="#五分钟技术导览">技术导览</a> ·
   <a href="https://github.com/SCUliujiacheng/agent-reliability-lab">English</a>
@@ -27,9 +27,9 @@
 
 ## 我为什么做这个项目
 
-我关心的不是 Agent 能否在理想路径上“跑通一次”，而是它在工具超时、限流、进程重启和人工审批之后，是否还能解释自己做了什么、恢复到哪里，以及为什么可以相信最终结果。
+工具调用成功时，很多 Agent demo 看起来都差不多。我更想看超时、限流、重启或审批卡住以后会发生什么：它能不能说清楚停在哪里，恢复时会不会多做一次事，最后留下的记录够不够别人核对。
 
-为回答这个问题，我把可靠性拆成一组可以执行和验证的契约：状态持久化、幂等工具边界、绑定具体动作的审批、按序轨迹，以及能够从原始证据重建指标的评测门禁。这个仓库记录的是我对这些边界的设计与验证，而不是一条只在正常路径成立的演示。
+所以这里没有追求一条漂亮的 happy path。代码把状态、工具尝试、审批决定和 trace 留在同一个可检查的流程里；评测则从这些原始记录重算结果。它是我用来反复拆看这些边界的小实验，而不是生产事故处理器。
 
 ## 30 秒看结果
 
@@ -45,9 +45,9 @@
 
 差异来自首次调用的超时（`timeout`）与限流（`rate_limit`）：韧性模式会记录失败、在策略边界内重试并到达声明结果；脆弱模式在第一次失败后终止。指标不是手填摘要，而是由有序轨迹、套件/操作/输出哈希与版本化场景重新构建。
 
-## 我如何把问题做成系统
+## 最后做成了什么
 
-多数 Agent 演示只展示正常路径（happy path）；这个项目把“失败后是否仍然可信”作为主要产物。我实现了从运行时、工具边界、证据存储到评测门禁的完整纵向切片：
+我把注意力放在失败之后的几件具体事上，做成了一条从运行时到页面都能走通的路径：
 
 - 用显式状态机、checkpoint、optimistic version check 与 execution lease 实现 restart-safe resume，并让运行状态变更与审计事件共享一次 SQLite 事务。
 - 用严格 Pydantic schema、tool registry、timeout、bounded retry、idempotency key 和确定性 fault injection 收紧工具调用边界。
@@ -63,7 +63,7 @@
 
 打开[交互式架构图](docs/architecture/agent-reliability-lab-architecture.html)，可以切换视图、搜索组件、追踪关系并导出图像；设计证据与复现说明见[架构文档](docs/architecture/README.md)。
 
-## 核心实现与取舍
+## 关键边界与取舍
 
 | 约束 | 实现 | 为什么这样取舍 |
 | --- | --- | --- |
@@ -76,7 +76,7 @@
 
 可选 provider adapter 对远程 URL 强制 HTTPS，关闭 redirect，默认 connect/read timeout 为 5/30 秒、总 deadline 为 45 秒，并在 streaming 阶段限制响应为 1 MiB（可验证上限 16 MiB）。它不提供 outbound allowlist 或 network sandbox，生产环境仍需单独限制 egress。
 
-## 3 分钟运行
+## 在本地跑起来
 
 前置条件：Python 3.12+、[uv](https://docs.astral.sh/uv/) 与 Node.js 22.20+。
 
@@ -153,7 +153,7 @@ uv run arl export-trace <run-id> \
   --output artifacts/trace.json
 ```
 
-## 工程质量
+## 本地检查
 
 ```bash
 uv sync --dev --locked
@@ -192,7 +192,7 @@ benchmarks/     已提交的 baseline report
 docs/           架构、benchmark semantics、provenance 与技术导览
 ```
 
-## 已知限制
+## 这个项目不能证明什么
 
 - headline suite 只有 6 个 synthetic incident scenarios，不能代表真实事故的全部多样性。
 - 默认 policy 是 scripted，因此 benchmark 测量的是 orchestration 与 tool-boundary reliability，而不是 LLM reasoning quality。
@@ -201,11 +201,11 @@ docs/           架构、benchmark semantics、provenance 与技术导览
 - 通用 `Policy` protocol 不强制统一的 per-call deadline；自定义 policy 必须约束自己的 I/O。可选 HTTP provider 有 45 秒总 deadline，但 action budget 只限制调用次数，不限制调用时长。
 - 工具副作用均为模拟，本项目不是生产事故执行器。
 
-下一阶段可以扩展 PostgreSQL migrations、authenticated approvals、distributed leases/workers、OpenTelemetry export，以及独立、重复、统计可信的 provider evaluation track。
+如果把它往生产方向推进，下一步会是 PostgreSQL migrations、带身份的审批、distributed leases/workers、OpenTelemetry export，以及独立、重复、统计可信的 provider evaluation track。这些都不在当前结论里。
 
 ## 五分钟技术导览
 
-我把核心验证路径压缩成 5 分钟：先查看基准差异，再启动 `timeout-recovery`，最后沿 trace 检查 durable retry 和 fail-closed gate。这条路径重点覆盖：
+最短的验证路线是：先看基准差异，再启动 `timeout-recovery`，最后沿 trace 看 retry 与 gate。它会带出几个值得追问的问题：
 
 - 为什么使用 exact trace-derived graders，而不是 LLM-as-judge？
 - 两个应用实例同时审批时，竞态如何收敛？
