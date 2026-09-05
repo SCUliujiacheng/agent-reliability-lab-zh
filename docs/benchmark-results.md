@@ -71,8 +71,10 @@ uv run arl gate artifacts/current-report.json --baseline benchmarks/baseline-rep
 - Git 修订号：`61682da932ab3f55596a22747cf6d64c90ae106e`
 - Git dirty 标记：`false`
 - 凭证成本：`$0`
-- baseline 文件 SHA-256：`2136fd6387e74a924a04f6f24b83d6ea28650b61142a07a5b838b8c4998b8a71`
-- baseline 文件大小：`176,386` bytes
+- baseline 文件 SHA-256：`4bd28bd536de153b15c58daca0902f60f01ff7f41406157932771076bda57150`
+- baseline 文件大小：`171,915` bytes
 - 生成时间（UTC）：`2026-09-05T14:31:07.105945Z`
+
+哈希和大小按 Git 仓库中采用 LF 换行的规范 blob 计算，不受本地平台换行转换影响。该 `v0.1.0` 基线在 `v0.1.1` 中被有意保留，用来证明安全依赖升级没有改变冻结场景的可靠性结果。
 
 本次基线由干净的实现提交 `61682da932ab3f55596a22747cf6d64c90ae106e` 生成。延迟是同一次本地运行的诊断值，会随机器与负载变化；正确率、恢复率、序列准确率、无效输出与重试证据则由确定性场景和有序轨迹重建。
