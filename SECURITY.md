@@ -8,7 +8,7 @@ Agent Reliability Lab 是一个作品集与研究演示项目。安全修复仅�
 
 请使用 GitHub 私有漏洞报告流程：
 
-<https://github.com/SCUliujiacheng/agent-reliability-lab/security/advisories/new>
+<https://github.com/SCUliujiacheng/agent-reliability-lab-zh/security/advisories/new>
 
 请勿在公开议题（Issue）中包含凭证、访问 token、个人数据或生产追踪。有效的报告应包括受影响的修订号、影响、最小复现步骤及建议的缓解措施。
 

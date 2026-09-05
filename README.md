@@ -2,7 +2,7 @@
 
 > 面向工具型 AI Agent 的本地优先可靠性实验台：把重试、持久化恢复、人工审批、故障注入与可验证评测，做成可以运行、审计和回归的工程证据。
 
-简体中文（当前仓库） | [English README](README_EN.md) | [英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)
+**简体中文** | [English](https://github.com/SCUliujiacheng/agent-reliability-lab)
 
 这是面向中文读者的独立公开版本，README、控制台与讲解文档以简体中文为主；原有英文版本继续在[英文原版仓库](https://github.com/SCUliujiacheng/agent-reliability-lab)维护。
 
