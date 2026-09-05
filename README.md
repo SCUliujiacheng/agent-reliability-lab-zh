@@ -15,7 +15,7 @@
   <a href="#架构">架构</a> ·
   <a href="#在本地跑起来">运行</a> ·
   <a href="#评测与失败分析">评测证据</a> ·
-  <a href="#五分钟技术导览">技术导览</a> ·
+  <a href="#顺着一次运行看完整链路">技术导览</a> ·
   <a href="https://github.com/SCUliujiacheng/agent-reliability-lab">English</a>
 </p>
 
