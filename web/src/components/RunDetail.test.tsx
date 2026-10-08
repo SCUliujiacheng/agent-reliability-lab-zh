@@ -21,7 +21,7 @@ describe("RunDetail", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "timeout-recovery" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "超时重试" })).toBeVisible();
     expect(screen.getByText("已诊断（diagnosed）")).toBeVisible();
     expect(screen.getByText("已成功")).toBeVisible();
     for (const term of ["模式", "尝试次数", "结果", "耗时"]) {

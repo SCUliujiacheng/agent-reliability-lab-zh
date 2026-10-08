@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { outcomeLabel } from "../presentation";
+import { outcomeLabel, scenarioLabel } from "../presentation";
 import type { LoadState, RunMode, ScenarioSummary } from "../types";
 
 interface ScenarioLauncherProps {
@@ -56,8 +56,9 @@ export function ScenarioLauncher({
         onChange={(event) => setSelectedScenario(event.target.value)}
         disabled={launching}
       >
-        {scenarios.map((scenario) => <option key={scenario.id} value={scenario.id}>{scenario.id}</option>)}
+        {scenarios.map((scenario) => <option key={scenario.id} value={scenario.id}>{scenarioLabel(scenario.id)}</option>)}
       </select>
+      <p className="scenario-reference">{current.id}</p>
 
       <label htmlFor="mode-select">模式</label>
       <select
@@ -66,8 +67,8 @@ export function ScenarioLauncher({
         onChange={(event) => setMode(event.target.value as RunMode)}
         disabled={launching}
       >
-        <option value="resilient">韧性模式</option>
-        <option value="fragile">脆弱模式</option>
+        <option value="resilient">有恢复策略 · resilient</option>
+        <option value="fragile">无恢复策略 · fragile</option>
       </select>
 
       <dl className="launcher-facts">

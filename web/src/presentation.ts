@@ -1,12 +1,25 @@
 import type { RunMode } from "./types";
 
 const MODE_LABELS: Record<RunMode, string> = {
-  resilient: "韧性模式",
-  fragile: "脆弱模式",
+  resilient: "有恢复策略",
+  fragile: "无恢复策略",
 };
 
 export function modeLabel(mode: RunMode): string {
   return MODE_LABELS[mode];
+}
+
+const SCENARIO_LABELS: Readonly<Record<string, string>> = {
+  "approval-reconstruction": "审批后恢复运行",
+  "malformed-output-rejected": "拒绝无效输出",
+  "normal-success": "正常执行",
+  "permanent-invalid-input": "拒绝无效输入",
+  "rate-limit-recovery": "限流重试",
+  "timeout-recovery": "超时重试",
+};
+
+export function scenarioLabel(id: string): string {
+  return SCENARIO_LABELS[id] ?? id;
 }
 
 const OUTCOME_LABELS: Readonly<Record<string, string>> = {

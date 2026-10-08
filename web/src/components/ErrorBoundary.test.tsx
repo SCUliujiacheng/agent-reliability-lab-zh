@@ -24,8 +24,8 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("控制台已中断");
-    await user.click(screen.getByRole("button", { name: "重新加载控制台" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("页面加载失败");
+    await user.click(screen.getByRole("button", { name: "重新加载" }));
     expect(screen.getByText("Recovered content")).toBeVisible();
   });
 });

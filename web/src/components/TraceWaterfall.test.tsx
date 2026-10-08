@@ -10,7 +10,7 @@ describe("TraceWaterfall", () => {
 
     const rows = screen.getAllByTestId("trace-row").map((row) => row.textContent ?? "");
     const timeout = rows.findIndex((row) => row.includes("注入故障：超时（timeout）"));
-    const retry = rows.findIndex((row) => row.includes("第 2 次重试"));
+    const retry = rows.findIndex((row) => row.includes("第 2 次尝试（重试）"));
     const recovered = rows.findIndex((row) => row.includes("已恢复"));
     expect(timeout).toBeGreaterThan(-1);
     expect(retry).toBeGreaterThan(timeout);
@@ -26,7 +26,7 @@ describe("TraceWaterfall", () => {
       expect.stringContaining("search_recent_logs · 第 1 次尝试"),
       expect.stringContaining("注入故障：超时（timeout）"),
       expect.stringContaining("search_recent_logs · 工具超时（tool_timeout）"),
-      expect.stringContaining("第 2 次重试 · search_recent_logs"),
+      expect.stringContaining("search_recent_logs · 第 2 次尝试（重试）"),
       expect.stringContaining("search_recent_logs · 已恢复"),
       expect.stringContaining("运行已建立检查点"),
     ]);
@@ -172,7 +172,7 @@ describe("TraceWaterfall", () => {
       />,
     );
 
-    expect(screen.getByText("第 2 次重试 · search_recent_logs")).toBeVisible();
+    expect(screen.getByText("search_recent_logs · 第 2 次尝试（重试）")).toBeVisible();
     expect(screen.getByText("search_recent_logs · 已完成")).toBeVisible();
     expect(screen.queryByText(/已恢复/)).not.toBeInTheDocument();
   });

@@ -1,5 +1,5 @@
 import type { LoadState, PendingApproval, RunSummary, TraceEvent } from "../types";
-import { modeLabel, outcomeLabel } from "../presentation";
+import { modeLabel, outcomeLabel, scenarioLabel } from "../presentation";
 import { StatusMark } from "./StatusMark";
 import { TraceWaterfall } from "./TraceWaterfall";
 
@@ -50,7 +50,8 @@ export function RunDetail({
     <main className="detail-page" id="runs">
       <div className="detail-toolbar">
         <button type="button" className="back-button" onClick={onBack}>
-          <span aria-hidden="true">←</span> 返回运行记录
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m10 5-7 7 7 7M3 12h18" /></svg>
+          返回运行记录
         </button>
         <div className="detail-actions">
           <button type="button" className="secondary-button" onClick={() => exportTrace(run, events)}>导出轨迹</button>
@@ -60,8 +61,8 @@ export function RunDetail({
 
       <header className="detail-header">
         <div>
-          <p className="eyebrow">运行详情</p>
-          <h1>{run.scenario_id}</h1>
+          <h1>{scenarioLabel(run.scenario_id)}</h1>
+          {scenarioLabel(run.scenario_id) !== run.scenario_id ? <p className="scenario-reference">{run.scenario_id}</p> : null}
           <p className="run-reference">{run.id}</p>
         </div>
         <StatusMark status={run.status} />
@@ -77,9 +78,8 @@ export function RunDetail({
       {run.status === "waiting_approval" && run.approval_required && approval ? (
         <section className="approval-panel" aria-labelledby="approval-title">
           <div>
-            <p className="eyebrow">人工检查点</p>
-            <h2 id="approval-title">操作等待审批</h2>
-            <p>请在记录决定前，核对这项操作的确切副作用。</p>
+            <h2 id="approval-title">待审批操作</h2>
+            <p>允许前请核对工具和参数。</p>
             <dl className="approval-details">
               <div><dt>工具</dt><dd><code>{approval.tool_name}</code></dd></div>
               <div><dt>操作</dt><dd>第 {approval.action_step} 步</dd></div>
@@ -102,8 +102,7 @@ export function RunDetail({
       <section className="detail-trace" aria-labelledby="trace-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">执行轨迹</p>
-            <h2 id="trace-title">事件瀑布</h2>
+            <h2 id="trace-title">执行记录</h2>
           </div>
           <span>{events.length} 个事件</span>
         </div>

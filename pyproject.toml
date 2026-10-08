@@ -8,7 +8,7 @@ version = "0.1.1"
 description = "一个用于评测工具调用型智能体可靠性的本地优先平台。"
 requires-python = ">=3.12"
 dependencies = [
-  "anyio==4.10.0",
+  "anyio==4.14.2",
   "fastapi==0.141.1",
   "httpx>=0.28,<1",
   "pydantic>=2.10,<3",

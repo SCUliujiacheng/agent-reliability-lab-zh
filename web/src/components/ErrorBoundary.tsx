@@ -29,10 +29,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.failed) {
       return (
         <main className="fatal-state" role="alert">
-          <p className="eyebrow">界面发生意外错误</p>
-          <h1>控制台已中断</h1>
-          <p>当前页面无法渲染，请重新加载。</p>
-          <button type="button" className="primary-button" onClick={this.reset}>重新加载控制台</button>
+          <h1>页面加载失败</h1>
+          <p>请重新加载页面。</p>
+          <button type="button" className="primary-button" onClick={this.reset}>重新加载</button>
         </main>
       );
     }
