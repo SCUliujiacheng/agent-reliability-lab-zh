@@ -1,10 +1,10 @@
 # 数据与场景来源
 
-Agent Reliability Lab 有意设计为完全自包含。默认演示与基准测试不使用抓取语料、生产事故数据、客户记录或隐藏的模型生成标签。
+默认演示与基准测试使用仓库内的合成场景和模拟工具。场景包含输入、故障规则和预期结果，不依赖生产事故数据或模型评分。
 
 ## 仓库内容
 
-- `scenarios/incident-response/` 下六个手工编写的 YAML 场景。
+- `scenarios/incident-response/` 下六个固定的 YAML 场景。
 - 一个具有类型化输入与输出的确定性内存事件响应后端。
 - 在指定工具、逻辑动作和尝试次数触发的显式故障规则。
 - 与各场景一同存储的预期工具序列和结果。
@@ -47,9 +47,9 @@ Agent Reliability Lab 有意设计为完全自包含。默认演示与基准测�
 - 审批决策；
 - 终态成功或失败。
 
-存储和导出的载荷都会经过递归脱敏。`Authorization`、`token`、`secret`、`password`、`private-key`、`API-key`、`credential` 等字段变体，以及显式配置的秘密值，都会在持久化前被替换。`prompt_tokens` 和 `token_count` 等指标名称仍会保留。API 对外提供的追踪 DTO 有意比内部事件模型更窄。
+存储和导出的载荷都会经过递归脱敏。`Authorization`、`token`、`secret`、`password`、`private-key`、`API-key`、`credential` 等字段变体，以及显式配置的秘密值，都会在持久化前被替换。`prompt_tokens` 和 `token_count` 等指标名称仍会保留。API 对外返回的轨迹字段少于内部事件模型。
 
-## 复现契约
+## 复现命令
 
 ```bash
 uv sync --dev --locked
@@ -59,6 +59,6 @@ uv run arl gate artifacts/current-report.json --baseline benchmarks/baseline-rep
 
 脚本化基准测试的行为具有确定性，但运行 UUID、时间戳和延迟测量值会变化。基线规范化既保留与结论相关的证据，也明确记录版本控制来源。
 
-## 负责任地扩展测试套件
+## 添加场景
 
-新增场景应只引入一种名称明确的行为，声明精确预期结果，并为场景加载器和门禁同时添加测试。切勿将真实凭证或生产日志写入 YAML 测试数据。如果新后端具有非确定性，请勿将其纳入核心精确基准测试；应另行发布评测，并明确其评分器和局限性。
+新增场景应聚焦一种行为，写明预期结果，并为场景加载器和 gate 添加测试。YAML 中只放合成数据。非确定性后端需要单独的评测与评分规则，不能直接沿用当前基准的精确比较。

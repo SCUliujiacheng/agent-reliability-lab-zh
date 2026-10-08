@@ -41,7 +41,7 @@ function present(event: TraceEvent, retry: boolean, recovered: boolean): TracePr
       return { title: "智能体已启动", meta: "运行进入执行阶段", tone: "active" };
     case "tool.attempt.started":
       return retry
-        ? { title: `第 ${attempt} 次重试 · ${tool}`, meta: "工具执行", tone: "active" }
+        ? { title: `${tool} · 第 ${attempt} 次尝试（重试）`, meta: "工具执行", tone: "active" }
         : { title: `${tool} · 第 ${attempt} 次尝试`, meta: "工具执行", tone: "neutral" };
     case "fault.injected":
       return {
@@ -279,7 +279,7 @@ export function TraceWaterfall({ events }: TraceWaterfallProps) {
     return (
       <div className="state-panel trace-empty">
         <strong>暂无轨迹事件</strong>
-        <p>智能体在场景中推进时，事件会显示在这里。</p>
+        <p>运行开始后，这里会显示每一步调用。</p>
       </div>
     );
   }

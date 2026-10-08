@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
 import type { EvaluationReport, ModeMetrics } from "../types";
 
 interface EvaluationComparisonProps {
   report: EvaluationReport;
+  action?: ReactNode;
 }
 
 type MetricKey = keyof Pick<
@@ -22,6 +24,7 @@ interface MetricDefinition {
 }
 
 const METRICS: MetricDefinition[] = [
+  { key: "task_correctness_rate", label: "任务正确率", higherIsBetter: true, format: "rate" },
   { key: "recovery_rate", label: "恢复率", higherIsBetter: true, format: "rate" },
   { key: "tool_sequence_accuracy", label: "工具序列准确率", higherIsBetter: true, format: "rate" },
   { key: "invalid_output_rate", label: "接受的无效输出", higherIsBetter: false, format: "rate" },
@@ -34,38 +37,26 @@ type ChangeState = "unavailable" | "unchanged" | "improved" | "regressed";
 const CHANGE_LABELS: Record<ChangeState, string> = {
   unavailable: "暂不可用",
   unchanged: "无变化",
-  improved: "已改善",
-  regressed: "有回退",
+  improved: "改善",
+  regressed: "变差",
 };
-
-function formatRate(value: number | null): string {
-  return value === null ? "暂不可用" : `${(value * 100).toFixed(1)}%`;
-}
 
 function formatMetric(value: number | null, format: MetricDefinition["format"]): string {
   if (value === null) return "暂不可用";
-  if (format === "rate") return formatRate(value);
+  if (format === "rate") return `${(value * 100).toFixed(1)}%`;
   if (format === "duration") return `${value.toLocaleString("zh-CN", { maximumFractionDigits: 1 })} ms`;
   return value.toLocaleString("zh-CN");
 }
 
-function changeLabel(
-  fragile: number | null,
-  resilient: number | null,
-  higherIsBetter: boolean,
-): ChangeState {
+function changeLabel(fragile: number | null, resilient: number | null, higherIsBetter: boolean): ChangeState {
   if (fragile === null || resilient === null) return "unavailable";
   const delta = resilient - fragile;
   if (Math.abs(delta) < Number.EPSILON) return "unchanged";
   return (delta > 0) === higherIsBetter ? "improved" : "regressed";
 }
 
-function deltaLabel(
-  fragile: number | null,
-  resilient: number | null,
-  format: MetricDefinition["format"],
-): string {
-  if (fragile === null || resilient === null) return "暂不可用";
+function deltaLabel(fragile: number | null, resilient: number | null, format: MetricDefinition["format"]): string {
+  if (fragile === null || resilient === null) return "—";
   const delta = resilient - fragile;
   const sign = delta > 0 ? "+" : "";
   if (format === "rate") return `${sign}${(delta * 100).toFixed(1)} 个百分点`;
@@ -73,50 +64,27 @@ function deltaLabel(
   return `${sign}${delta.toLocaleString("zh-CN")}`;
 }
 
-export function EvaluationComparison({ report }: EvaluationComparisonProps) {
+export function EvaluationComparison({ report, action }: EvaluationComparisonProps) {
   const fragile = report.modes.fragile.metrics;
   const resilient = report.modes.resilient.metrics;
-  const correctnessDelta = resilient.task_correctness_rate - fragile.task_correctness_rate;
-  const correctnessState = changeLabel(
-    fragile.task_correctness_rate,
-    resilient.task_correctness_rate,
-    true,
-  );
 
   return (
     <section className="comparison" id="evaluations" aria-labelledby="comparison-title">
       <div className="section-heading">
-        <div>
-          <p className="eyebrow">最新评测</p>
-          <h2 id="comparison-title">脆弱模式 vs 韧性模式</h2>
-        </div>
-        <time dateTime={report.generated_at}>{new Date(report.generated_at).toLocaleDateString("zh-CN")}</time>
-      </div>
-
-      <div className="correctness-band">
-        <div>
-          <span>脆弱模式正确率</span>
-          <strong>{formatRate(fragile.task_correctness_rate)}</strong>
-        </div>
-        <span className="comparison-arrow" aria-hidden="true">→</span>
-        <div>
-          <span>韧性模式正确率</span>
-          <strong>{formatRate(resilient.task_correctness_rate)}</strong>
-        </div>
-        <div className={`comparison-delta comparison-delta--${correctnessState}`}>
-          <strong>{correctnessDelta >= 0 ? "+" : ""}{(correctnessDelta * 100).toFixed(1)} 个百分点</strong>
-          <span>{CHANGE_LABELS[correctnessState]}</span>
+        <h2 id="comparison-title">评测对比</h2>
+        <div className="section-actions">
+          <time dateTime={report.generated_at}>{new Date(report.generated_at).toLocaleDateString("zh-CN")}</time>
+          {action}
         </div>
       </div>
-
       <div className="comparison-table-wrap">
         <table className="comparison-table">
           <caption className="sr-only">按执行模式对比评测指标</caption>
           <thead>
             <tr>
               <th scope="col">指标</th>
-              <th scope="col">脆弱模式</th>
-              <th scope="col">韧性模式</th>
+              <th scope="col">无恢复策略 <span className="wire-label">fragile</span></th>
+              <th scope="col">有恢复策略 <span className="wire-label">resilient</span></th>
               <th scope="col">变化</th>
             </tr>
           </thead>
@@ -131,10 +99,10 @@ export function EvaluationComparison({ report }: EvaluationComparisonProps) {
                   <td>{formatMetric(fragileValue, metric.format)}</td>
                   <td>{formatMetric(resilientValue, metric.format)}</td>
                   <td>
-                    <span className={`change-state change-state--${state}`}>
-                      {CHANGE_LABELS[state]}
-                    </span>
-                    <small>{deltaLabel(fragileValue, resilientValue, metric.format)}</small>
+                    <div className="metric-change">
+                      <span>{deltaLabel(fragileValue, resilientValue, metric.format)}</span>
+                      <small className={`change-state change-state--${state}`}>{CHANGE_LABELS[state]}</small>
+                    </div>
                   </td>
                 </tr>
               );
@@ -142,6 +110,9 @@ export function EvaluationComparison({ report }: EvaluationComparisonProps) {
           </tbody>
         </table>
       </div>
+      <p className="section-note">
+        {fragile.case_count} 个固定合成场景；这些数字用于比较执行策略，不代表真实模型能力。
+      </p>
     </section>
   );
 }

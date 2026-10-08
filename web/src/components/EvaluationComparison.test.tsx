@@ -10,7 +10,7 @@ describe("EvaluationComparison", () => {
     expect(screen.getByText("58.4%")).toBeVisible();
     expect(screen.getByText("91.7%")).toBeVisible();
     expect(screen.getByText("+33.3 个百分点")).toBeVisible();
-    expect(screen.getAllByText("已改善").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("改善").length).toBeGreaterThan(0);
   });
 
   it("uses lower-is-better direction for invalid outputs and latency", () => {
@@ -18,8 +18,8 @@ describe("EvaluationComparison", () => {
 
     const invalid = screen.getByRole("row", { name: /接受的无效输出/i });
     const latency = screen.getByRole("row", { name: /P95 延迟/i });
-    expect(within(invalid).getByText("已改善")).toBeVisible();
-    expect(within(latency).getByText("有回退")).toBeVisible();
+    expect(within(invalid).getByText("改善")).toBeVisible();
+    expect(within(latency).getByText("变差")).toBeVisible();
   });
 
   it("renders null recovery as unavailable", () => {

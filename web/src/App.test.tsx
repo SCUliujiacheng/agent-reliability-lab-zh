@@ -91,7 +91,7 @@ describe("App workflows", () => {
     await user.selectOptions(screen.getByLabelText("模式"), "resilient");
     await user.click(screen.getByRole("button", { name: "启动运行" }));
 
-    expect(await screen.findByRole("heading", { name: "timeout-recovery" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "超时重试" })).toBeVisible();
     expect(screen.getByText("已成功")).toBeVisible();
     expect(await screen.findByText(/注入故障：超时（timeout）/)).toBeVisible();
   });
@@ -429,7 +429,7 @@ describe("App workflows", () => {
     });
 
     expect(
-      within(screen.getByRole("region", { name: "可靠性指标" })).getByText("91.7%"),
+      within(screen.getByRole("region", { name: "评测对比" })).getByText("91.7%"),
     ).toBeVisible();
     expect(screen.queryByText("暂无评测")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("评测完成");
@@ -473,7 +473,7 @@ describe("App workflows", () => {
     render(<App />);
 
     expect(
-      await screen.findByRole("heading", { name: "无法加载控制台数据" }),
+      await screen.findByRole("heading", { name: "无法加载运行数据" }),
     ).toBeVisible();
     expect(screen.getAllByRole("alert")).toHaveLength(1);
     expect(screen.queryByText("offline secret")).not.toBeInTheDocument();
@@ -490,28 +490,41 @@ describe("App workflows", () => {
     expect(result.violations).toEqual([]);
   });
 
-  it("explains the investigation path before showing the benchmark rail", async () => {
+  it("puts runnable scenarios and recent runs before the evaluation table", async () => {
     vi.stubGlobal("fetch", overviewFetch({ runs: [runFixture()] }));
     render(<App />);
 
-    expect(
-      await screen.findByRole("heading", { name: "Agent 出错后发生了什么" }),
-    ).toBeVisible();
-    expect(screen.getByText("运行固定场景，对照 fragile / resilient，再点进 trace。"))
-      .toBeVisible();
-    expect(screen.getByRole("link", { name: "运行场景" })).toBeVisible();
-    const rail = screen.getByRole("region", { name: "可靠性指标" });
-    for (const label of [
-      "韧性模式正确率",
-      "故障恢复率",
-      "脆弱模式正确率",
-      "接受的无效输出",
-    ]) {
-      expect(within(rail).getByText(label)).toBeVisible();
-    }
-    expect(within(rail).getByText("91.7%")).toBeVisible();
-    expect(within(rail).getByText("58.4%")).toBeVisible();
-    expect(within(rail).getByText("0.0%")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "运行记录", level: 1 })).toBeVisible();
+    const launcher = screen.getByRole("region", { name: "运行场景" });
+    const runs = screen.getByRole("region", { name: "最近运行" });
+    const comparison = screen.getByRole("region", { name: "评测对比" });
+    expect(launcher.compareDocumentPosition(runs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(runs.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(comparison).getByRole("row", { name: /任务正确率/ })).toHaveTextContent("91.7%");
+    expect(within(comparison).getByText("58.4%")).toBeVisible();
+    expect(within(comparison).getByText("0.0%")).toBeVisible();
+    expect(screen.getByRole("option", { name: "超时重试" })).toHaveValue("timeout-recovery");
+  });
+
+  it("returns from a run detail to the selected navigation section", async () => {
+    const base = overviewFetch({ runs: [runFixture()] });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `/v1/runs/${runFixture().id}`) return response(runFixture());
+      if (url.endsWith("/trace?limit=100&after_sequence=0")) {
+        return response({ events: traceFixture, next_after_sequence: 7, has_more: false });
+      }
+      return base(input, init);
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /打开运行 timeout-recovery/ }));
+    expect(await screen.findByRole("heading", { name: "超时重试" })).toBeVisible();
+    await user.click(screen.getByRole("link", { name: "评测" }));
+    const comparison = await screen.findByRole("region", { name: "评测对比" });
+    await waitFor(() => expect(comparison).toHaveFocus());
+    expect(screen.getByRole("heading", { name: "运行记录", level: 1 })).toBeVisible();
   });
 
   it("keeps launcher controls keyboard operable", async () => {
@@ -533,6 +546,6 @@ describe("App workflows", () => {
     const start = await screen.findByRole("button", { name: "启动运行" });
     start.focus();
     await user.keyboard("{Enter}");
-    expect(await screen.findByRole("heading", { name: "timeout-recovery" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "超时重试" })).toBeVisible();
   });
 });
