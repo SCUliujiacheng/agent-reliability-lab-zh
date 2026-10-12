@@ -7,6 +7,7 @@ interface OverviewProps {
   state: LoadState;
   runs: RunSummary[];
   evaluation: EvaluationReport | null;
+  evaluationError?: boolean;
   scenarios: ScenarioSummary[];
   launching: boolean;
   evaluating: boolean;
@@ -20,6 +21,7 @@ export function Overview({
   state,
   runs,
   evaluation,
+  evaluationError = false,
   scenarios,
   launching,
   evaluating,
@@ -79,6 +81,9 @@ export function Overview({
         </div>
       )}
 
+      {evaluationError && state === "ready" ? (
+        <p role="alert">旧评估无法读取。运行与场景仍可使用；你可以生成一份新评估。</p>
+      ) : null}
       {evaluation && state !== "error" ? (
         <EvaluationComparison report={evaluation} action={evaluationAction} />
       ) : (

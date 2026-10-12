@@ -12,6 +12,7 @@ interface RunDetailProps {
   mutationState: MutationState;
   onBack: () => void;
   onRunAgain: () => void;
+  onResume?: () => void;
   onApprove: (approval: PendingApproval, allow: boolean) => void;
 }
 
@@ -38,6 +39,7 @@ export function RunDetail({
   mutationState,
   onBack,
   onRunAgain,
+  onResume,
   onApprove,
 }: RunDetailProps) {
   const outcome = run.result?.outcome === undefined
@@ -55,6 +57,9 @@ export function RunDetail({
           返回运行记录
         </button>
         <div className="detail-actions">
+          {mobileEdition && onResume && (run.status === "running" || run.status === "queued") ? (
+            <button type="button" className="primary-button" onClick={onResume} disabled={pending}>继续原运行</button>
+          ) : null}
           {mobileEdition
             ? <a className="secondary-button" href={`/v1/export?run_id=${encodeURIComponent(run.id)}`}>导出轨迹</a>
             : <button type="button" className="secondary-button" onClick={() => exportTrace(run, events)}>导出轨迹</button>}
