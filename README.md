@@ -24,6 +24,12 @@
 
 两种模式的差异来自 `timeout-recovery` 和 `rate-limit-recovery`：注入第一次调用失败后，resilient 模式各重试一次并完成任务。这里的 6/6 只表示通过了这六个合成场景。评分从运行轨迹重新计算，定义和分母见[实验结果](docs/benchmark-results.md)，原始记录见[基线报告](benchmarks/baseline-report.json)。
 
+## 下载应用
+
+[v0.2.0 预发布版本](https://github.com/SCUliujiacheng/agent-reliability-lab-zh/releases/tag/v0.2.0)提供 Windows x64、macOS Apple silicon / Intel 和 Android 下载。桌面 ZIP 包含 Python 与页面资源，Android 在手机上运行六个事故场景；使用这些应用不需要另装 Python、Node.js，也不需要 API key 或下载模型。
+
+桌面应用运行现有完整引擎。手机离线版使用独立的小型执行器，支持持久化轨迹、审批、重启恢复，并从运行记录重算指标。手机报告标记为 `mobile/v1`；完整命令行、外部模型适配器和桌面证据门禁仍由源码版提供。安装方式、数据位置和验证范围见[应用下载说明](docs/downloads.md)。
+
 ## 本地运行
 
 需要 Python 3.12+、[uv](https://docs.astral.sh/uv/) 和 Node.js 22.20+。以下单行命令兼容 PowerShell 与 Bash。

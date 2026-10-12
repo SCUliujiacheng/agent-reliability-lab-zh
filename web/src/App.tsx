@@ -172,6 +172,9 @@ function Dashboard() {
 export function App() {
   return (
     <ErrorBoundary>
+      {document.querySelector('meta[name="arl-runtime"][content="mobile"]') !== null && (
+        <p className="mobile-edition-note" role="note">手机离线版 · 支持六个合成事故场景、本地审批和运行轨迹。完整命令行与外部模型适配器请使用源码版。</p>
+      )}
       <Dashboard />
     </ErrorBoundary>
   );
